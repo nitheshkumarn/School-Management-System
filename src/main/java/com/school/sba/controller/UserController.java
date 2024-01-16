@@ -2,6 +2,7 @@ package com.school.sba.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,6 +38,15 @@ public class UserController {
 		findUser = userService.findUser(userId);
 
 		return findUser;
+	}
+	
+	@DeleteMapping("/{userId}")
+	public ResponseEntity<ResponseStructure<UserResponse>> softDeleteUser(@PathVariable Integer userId){
+		ResponseEntity<ResponseStructure<UserResponse>> deleteUser = null;
+		
+		deleteUser = userService.softDeleteUser(userId);
+		
+		return deleteUser;
 	}
 
 }

@@ -11,6 +11,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import com.school.sba.exception.AdminAlreadyExistException;
 import com.school.sba.exception.SchoolInsertionFailedException;
 import com.school.sba.exception.SchoolObjectNotFoundByIdException;
+import com.school.sba.exception.UserNotFoundByIdException;
 
 @RestControllerAdvice
 public class ApplicationHandler extends ResponseEntityExceptionHandler {
@@ -43,8 +44,18 @@ public class ApplicationHandler extends ResponseEntityExceptionHandler {
 	}
 
 	@ExceptionHandler
-	public ResponseEntity<Object> handleUserNotFoundById(AdminAlreadyExistException exception) {
+	public ResponseEntity<Object> handleAdminAlreadyExist(AdminAlreadyExistException exception) {
 
 		return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "Admin Already Exist to this server");
 	}
+	
+	@ExceptionHandler
+	public ResponseEntity<Object> handleUserNotFoundById(UserNotFoundByIdException exception) {
+
+		return structure(HttpStatus.NOT_FOUND, exception.getMessage(), "User with the given ID is not present");
+	}
+	
+	
+	
+	
 }

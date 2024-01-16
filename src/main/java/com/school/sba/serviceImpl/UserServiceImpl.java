@@ -83,4 +83,20 @@ public class UserServiceImpl implements lUserService {
 		return new ResponseEntity<ResponseStructure<UserResponse>>(rsu, HttpStatus.FOUND);
 	}
 
+	@Override
+	public ResponseEntity<ResponseStructure<UserResponse>> softDeleteUser(Integer userId) {
+		User userd = userRepo.findById(userId)
+				.orElseThrow(() -> new UserNotFoundByIdException("User Not Found"));
+		
+		userd.setIsdeleted(true);
+		User user = userRepo.save(userd);
+		
+		rsu.setStatus(HttpStatus.OK.value());
+		rsu.setMessage("user data soft deleted successfully");
+		rsu.setData(mapToUserResponse(user));
+		return new ResponseEntity<ResponseStructure<UserResponse>>(rsu, HttpStatus.OK);
+		
+		
+	}
+
 }
