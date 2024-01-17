@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 
@@ -19,19 +18,19 @@ import com.school.sba.util.ResponseStructure;
 
 
 @RestController
-@RequestMapping("/users")
+
 public class UserController {
 	
 	@Autowired
 	private lUserService userService;
 	
-	@PostMapping("/register")
+	@PostMapping("/users/register")
 	public ResponseEntity<ResponseStructure<UserResponse>> saveUser(@RequestBody UserRequest userRequest){
 		ResponseEntity<ResponseStructure<UserResponse>> rs = userService.saveUser(userRequest);
 		return rs;
 	}
 	
-	@GetMapping("/{userId}")
+	@GetMapping("users/{userId}")
 	public ResponseEntity<ResponseStructure<UserResponse>> findUser(@PathVariable Integer userId){
 		ResponseEntity<ResponseStructure<UserResponse>> findUser = null;
 
@@ -40,7 +39,7 @@ public class UserController {
 		return findUser;
 	}
 	
-	@DeleteMapping("/{userId}")
+	@DeleteMapping("users/{userId}")
 	public ResponseEntity<ResponseStructure<UserResponse>> softDeleteUser(@PathVariable Integer userId){
 		ResponseEntity<ResponseStructure<UserResponse>> deleteUser = null;
 		

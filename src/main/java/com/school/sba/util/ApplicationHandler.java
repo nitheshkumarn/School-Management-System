@@ -1,35 +1,33 @@
 package com.school.sba.util;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import com.school.sba.exception.AdminAlreadyExistException;
+import com.school.sba.exception.SchoolAlreadyExistException;
 import com.school.sba.exception.SchoolInsertionFailedException;
-import com.school.sba.exception.SchoolObjectNotFoundByIdException;
+import com.school.sba.exception.SchoolNotFoundByIdException;
 import com.school.sba.exception.UserNotFoundByIdException;
 
 @RestControllerAdvice
 public class ApplicationHandler extends ResponseEntityExceptionHandler {
 
 	@ExceptionHandler
-	public ResponseEntity<ResponseStructure<String>> schoolInsertionFailedExceptionHandler(
-			SchoolInsertionFailedException exception) {
-		ResponseStructure<String> rs = new ResponseStructure<String>();
-		rs.setStatus(HttpStatus.FORBIDDEN.value());
-		rs.setMessage(exception.getMessage());
-		rs.setData("School Object could not be inserted due to null data insertion in fields");
-
-		return new ResponseEntity<ResponseStructure<String>>(rs, HttpStatus.FORBIDDEN);
-	}
-
-	@ExceptionHandler
 	public ResponseEntity<ResponseStructure<String>> schoolObjectNotFoundByIdException(
-			SchoolObjectNotFoundByIdException exception) {
+			SchoolNotFoundByIdException exception) {
 		ResponseStructure<String> rs = new ResponseStructure<String>();
 		rs.setStatus(HttpStatus.NOT_FOUND.value());
 		rs.setMessage(exception.getMessage());
@@ -53,6 +51,12 @@ public class ApplicationHandler extends ResponseEntityExceptionHandler {
 	public ResponseEntity<Object> handleUserNotFoundById(UserNotFoundByIdException exception) {
 
 		return structure(HttpStatus.NOT_FOUND, exception.getMessage(), "User with the given ID is not present");
+	}
+	
+	@ExceptionHandler
+	public ResponseEntity<Object> handleSchoolAlreadyExist(SchoolAlreadyExistException exception) {
+
+		return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "School Already Exist to this ADMIN");
 	}
 	
 	

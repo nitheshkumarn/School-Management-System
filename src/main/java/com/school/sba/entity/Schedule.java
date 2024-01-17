@@ -1,8 +1,8 @@
 package com.school.sba.entity;
 
+import java.time.Duration;
 import java.time.LocalTime;
 
-import org.springframework.stereotype.Component;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,7 +13,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@Component
 @Entity
 public class Schedule {
 
@@ -23,10 +22,10 @@ public class Schedule {
 	private LocalTime opensAt;
 	private LocalTime closesAt;
 	private Integer classHoursPerDay;
-	private LocalTime classHoursLength;
+	private Duration classHoursLength;
 	private LocalTime breakTime;
 	private LocalTime beakLength;
 	private LocalTime lunchTime;
-	private LocalTime lunchLength;
+	private Duration lunchLength;
 	
 }

@@ -5,19 +5,24 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 
 import com.school.sba.entity.School;
-import com.school.sba.exception.SchoolObjectNotFoundByIdException;
+import com.school.sba.requestdto.SchoolRequest;
+import com.school.sba.responsedto.SchoolResponse;
 import com.school.sba.util.ResponseStructure;
+
+
 
 public interface ISchoolService {
 
-	ResponseEntity<ResponseStructure<School>> addSchool(School school);
+	ResponseEntity<ResponseStructure<SchoolResponse>> saveSchool(Integer userId,SchoolRequest schoolRequest);
 	
-	ResponseEntity<ResponseStructure<School>> deleteSchool(Integer schoolId) throws SchoolObjectNotFoundByIdException;
+	ResponseEntity<ResponseStructure<School>> deleteSchool(Integer schoolId);
 
-	ResponseEntity<ResponseStructure<School>> updateSchool(Integer schoolId, School school) throws SchoolObjectNotFoundByIdException;
+	ResponseEntity<ResponseStructure<School>> updateSchool(Integer schoolId, SchoolRequest schoolRequest);
 
-	ResponseEntity<ResponseStructure<School>> findSchool(Integer schoolId) throws SchoolObjectNotFoundByIdException;
+	ResponseEntity<ResponseStructure<School>> findSchool(Integer schoolId);
 
 	ResponseEntity<ResponseStructure<List<School>>> findAllSchool();
+
+	
 
 }
