@@ -8,12 +8,18 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
 @Entity
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Schedule {
 
 	@Id
@@ -22,10 +28,10 @@ public class Schedule {
 	private LocalTime opensAt;
 	private LocalTime closesAt;
 	private Integer classHoursPerDay;
-	private Duration classHoursLength;
+	private Duration classHoursLengthInMin;
 	private LocalTime breakTime;
-	private LocalTime beakLength;
+	private Duration breakLengthInMin;
 	private LocalTime lunchTime;
-	private Duration lunchLength;
+	private Duration lunchLengthInMin;
 	
 }
