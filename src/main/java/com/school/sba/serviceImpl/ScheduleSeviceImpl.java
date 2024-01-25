@@ -81,29 +81,37 @@ public class ScheduleSeviceImpl implements IScheduleService {
 	@Override
 	public ResponseEntity<ResponseStructure<ScheduleResponse>> findSchedule(int schoolId) {
 
-		return scheduleRepo.findById(schoolId).map(schedule -> {
-			responseS.setStatus(HttpStatus.FOUND.value());
-			responseS.setMessage("schedule found");
-			responseS.setData(mapToScheduleResponse(schedule));
+		School school = schoolRepo.findById(schoolId)
+				.orElseThrow(() -> new SchoolNotFoundByIdException("School not found"));
 
-			return new ResponseEntity<ResponseStructure<ScheduleResponse>>(responseS, HttpStatus.FOUND);
-		}).orElseThrow(() -> new ScheduleNotFoundException("schedule not found"));
+		return scheduleRepo.findById(school.getSchedule().getScheduleId())
+				.map(schedule -> {
+					responseS.setStatus(HttpStatus.FOUND.value());
+					responseS.setMessage("schedule found");
+					responseS.setData(mapToScheduleResponse(schedule));
 
+					return new ResponseEntity<ResponseStructure<ScheduleResponse>>(responseS, HttpStatus.FOUND);
+				})
+				.orElseThrow(() -> new ScheduleNotFoundException("schedule not found"));
 	}
 
 	@Override
 	public ResponseEntity<ResponseStructure<ScheduleResponse>> updateSchedule(int scheduleId,
 			ScheduleRequest scheduleRequest) {
 
-		return scheduleRepo.findById(scheduleId).map(schedule -> {
-			schedule = scheduleRepo.save(mapToSchedule(scheduleRequest));
+		return scheduleRepo.findById(scheduleId)
+				.map(schedule -> {
+					Schedule mapToSchedule = mapToSchedule(scheduleRequest);
+					mapToSchedule.setScheduleId(scheduleId);
+					schedule = scheduleRepo.save(mapToSchedule);
 
-			responseS.setStatus(HttpStatus.OK.value());
-			responseS.setMessage("schedule updated successfully");
-			responseS.setData(mapToScheduleResponse(schedule));
+					responseS.setStatus(HttpStatus.OK.value());
+					responseS.setMessage("schedule updated successfully");
+					responseS.setData(mapToScheduleResponse(schedule));
 
-			return new ResponseEntity<ResponseStructure<ScheduleResponse>>(responseS, HttpStatus.OK);
-		}).orElseThrow(() -> new ScheduleNotFoundException("schedule not found"));
+					return new ResponseEntity<ResponseStructure<ScheduleResponse>>(responseS, HttpStatus.OK);
+				})
+				.orElseThrow(() -> new ScheduleNotFoundException("schedule not found"));
 
 	}
 }

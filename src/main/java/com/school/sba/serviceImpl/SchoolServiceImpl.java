@@ -1,18 +1,14 @@
 package com.school.sba.serviceImpl;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-
 import com.school.sba.entity.School;
-
 import com.school.sba.entity.enums.UserRole;
-import com.school.sba.exception.AdminAlreadyExistException;
-import com.school.sba.exception.SchoolAlreadyExistException;
+import com.school.sba.exception.SchoolInsertionFailedException;
 import com.school.sba.exception.SchoolNotFoundByIdException;
 import com.school.sba.exception.UserNotFoundByIdException;
 import com.school.sba.repository.ISchoolRepository;
@@ -45,33 +41,45 @@ public class SchoolServiceImpl implements ISchoolService {
 	}
 
 	private SchoolResponse mapToSchoolResponse(School school) {
-		return SchoolResponse.builder().schoolId(school.getSchoolId()).schoolName(school.getSchoolName()).build();
+		return SchoolResponse.builder().schoolId(school.getSchoolId()).schoolName(school.getSchoolName()).schoolEmailId(school.getSchoolEmailId()).schoolContactNumber(school.getSchoolContactNumber())
+				.schoolAddress(school.getSchoolAddress()).build();
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<SchoolResponse>> saveSchool(Integer userId, SchoolRequest schoolRequest) {
+	public ResponseEntity<ResponseStructure<SchoolResponse>> saveSchool(SchoolRequest schoolRequest) {
+		String username = SecurityContextHolder.getContext()
+				.getAuthentication()
+				.getName();
+		
+		// no need of taking the userId from the url beacuse we are retriving the username from the securityContextHolder.
+		// no need of passing the userId unless or until we have to deal with the another user.
+		
+		return userRepo.findByUserName(username)
+				.map(user -> {
+					if(user.getUserRole().equals(UserRole.ADMIN)) {
+						if(user.getSchool() == null) {
+							School school = schoolRepo.save(mapToSchool(schoolRequest));
 
-		 return userRepo.findById(userId).map(u->{
-			
-			if (u.getUserRole().equals(UserRole.ADMIN)) {
-				if(u.getSchool()==null) {
-				School saveSchool = schoolRepo.save(mapToSchool(schoolRequest));
-				u.setSchool(saveSchool);
-				userRepo.save(u);
-				responseS.setStatus(HttpStatus.CREATED.value());
-				responseS.setMessage("School data inserted successfully");
-				responseS.setData(mapToSchoolResponse(saveSchool));
+							userRepo.findAll().forEach(userFromRepo -> {
+								userFromRepo.setSchool(school);
+								userRepo.save(user);
+							});
 
-				return new ResponseEntity<ResponseStructure<SchoolResponse>>(responseS, HttpStatus.CREATED);
-			}
-				else
-					throw new SchoolAlreadyExistException("School present for the admin provided");
+							responseS.setStatus(HttpStatus.CREATED.value());
+							responseS.setMessage("School inserted successfully");
+							responseS.setData(mapToSchoolResponse(school));
 
-			}else
-				throw new AdminAlreadyExistException("You are not the admin");
-			
-		})
-				.orElseThrow(() -> new UserNotFoundByIdException(null));
+							return new ResponseEntity<ResponseStructure<SchoolResponse>>(responseS, HttpStatus.CREATED);
+						}
+						else {
+							throw new SchoolInsertionFailedException("school is already present");
+						}
+					}
+					else {
+						throw new SchoolInsertionFailedException("school can be created only by ADMIN");
+					}
+				})
+				.orElseThrow(() -> new UserNotFoundByIdException("user not found"));
 	}
 
 	@Override
@@ -90,21 +98,22 @@ public class SchoolServiceImpl implements ISchoolService {
 	}
 
 	@Override
-	public ResponseEntity<ResponseStructure<School>> updateSchool(Integer schoolId, SchoolRequest schoolRequest)
+	public ResponseEntity<ResponseStructure<SchoolResponse>> updateSchool(Integer schoolId, SchoolRequest schoolRequest)
 			throws SchoolNotFoundByIdException {
 
-		School existingSchool = schoolRepo.findById(schoolId).map(u -> {
-			School school = mapToSchool(schoolRequest);
-			school.setSchoolId(schoolId);
-			return schoolRepo.save(school);
-		}).orElseThrow(() -> new SchoolNotFoundByIdException(
-				"school object cannot be updated due to absence of technical problems"));
+		return schoolRepo.findById(schoolId)
+				.map( school -> {
+					school = mapToSchool(schoolRequest);
+					school.setSchoolId(schoolId);
+					school = schoolRepo.save(school);
+					
+					responseS.setStatus(HttpStatus.OK.value());
+					responseS.setMessage("School data updated successfully in database");
+					responseS.setData(mapToSchoolResponse(school));
 
-		responseStructure.setStatus(HttpStatus.OK.value());
-		responseStructure.setMessage("School data updated successfully in database");
-		responseStructure.setData(existingSchool);
-
-		return new ResponseEntity<ResponseStructure<School>>(responseStructure, HttpStatus.OK);
+					return new ResponseEntity<ResponseStructure<SchoolResponse>>(responseS, HttpStatus.OK);
+				})
+				.orElseThrow(() -> new SchoolNotFoundByIdException("school object cannot be updated due to absence of technical problems"));
 
 	}
 
@@ -121,18 +130,5 @@ public class SchoolServiceImpl implements ISchoolService {
 		return new ResponseEntity<ResponseStructure<School>>(responseStructure, HttpStatus.FOUND);
 	}
 
-	@Override
-	public ResponseEntity<ResponseStructure<List<School>>> findAllSchool() {
-
-		List<School> all = schoolRepo.findAll();
-
-		ResponseStructure<List<School>> rs = new ResponseStructure<List<School>>();
-		rs.setStatus(HttpStatus.FOUND.value());
-		rs.setMessage("School data found in database");
-		rs.setData(all);
-
-		return new ResponseEntity<ResponseStructure<List<School>>>(rs, HttpStatus.FOUND);
-
-	}
 
 }

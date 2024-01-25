@@ -1,5 +1,7 @@
 package com.school.sba.repository;
 
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -10,4 +12,8 @@ import com.school.sba.entity.enums.UserRole;
 public interface UserRepository extends JpaRepository<User, Integer> {
 	
 	boolean existsByUserRole(UserRole userRole);
+	
+	boolean existsByIsDeletedAndUserRole(boolean b, UserRole userRole);
+	
+	Optional<User> findByUserName(String username);
 }
