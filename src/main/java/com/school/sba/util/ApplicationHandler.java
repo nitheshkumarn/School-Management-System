@@ -17,6 +17,8 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import com.school.sba.exception.AdminAlreadyExistException;
+import com.school.sba.exception.ScheduleAlreadyPresentException;
+import com.school.sba.exception.ScheduleNotFoundException;
 import com.school.sba.exception.SchoolAlreadyExistException;
 import com.school.sba.exception.SchoolInsertionFailedException;
 import com.school.sba.exception.SchoolNotFoundByIdException;
@@ -59,7 +61,26 @@ public class ApplicationHandler extends ResponseEntityExceptionHandler {
 		return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "School Already Exist to this ADMIN");
 	}
 	
+	@ExceptionHandler(ScheduleNotFoundException.class)
+	public ResponseEntity<Object> handleScheduleNotFoundException(ScheduleNotFoundException exception) {
+		return structure(HttpStatus.NOT_FOUND, exception.getMessage(), "Schedule not found, Try adding the schedule first");
+	}
 	
+//	@Override
+//	protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
+//			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+//		List<ObjectError> allErrors = ex.getAllErrors();
+//		Map<String, String> errors = new HashMap<String, String>();
+//		allErrors.forEach(error -> {
+//			FieldError fieldError = (FieldError) error;
+//
+//		return structure(HttpStatus.BAD_REQUEST, Exception.getMessage(), "Schedule is already present and assigned to school");
+//	}
+	
+		@ExceptionHandler(ScheduleAlreadyPresentException.class)
+		public ResponseEntity<Object> handleScheduleAlreadyPresentException(ScheduleAlreadyPresentException exception) {
+			return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "Schedule is already present and assigned to school");
+		}
 	
 	
 }

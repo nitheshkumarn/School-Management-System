@@ -63,7 +63,6 @@ public class SchoolServiceImpl implements ISchoolService {
 				responseS.setData(mapToSchoolResponse(saveSchool));
 
 				return new ResponseEntity<ResponseStructure<SchoolResponse>>(responseS, HttpStatus.CREATED);
-
 			}
 				else
 					throw new SchoolAlreadyExistException("School present for the admin provided");
@@ -73,9 +72,6 @@ public class SchoolServiceImpl implements ISchoolService {
 			
 		})
 				.orElseThrow(() -> new UserNotFoundByIdException(null));
-
-	
-
 	}
 
 	@Override
@@ -123,7 +119,6 @@ public class SchoolServiceImpl implements ISchoolService {
 		responseStructure.setData(fetchedSchool);
 
 		return new ResponseEntity<ResponseStructure<School>>(responseStructure, HttpStatus.FOUND);
-
 	}
 
 	@Override

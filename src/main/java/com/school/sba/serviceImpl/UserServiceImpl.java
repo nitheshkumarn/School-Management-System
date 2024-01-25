@@ -5,10 +5,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.school.sba.entity.AcademicProgram;
 import com.school.sba.entity.User;
 import com.school.sba.entity.enums.UserRole;
+import com.school.sba.exception.AcademicProgramNotFoundException;
 import com.school.sba.exception.AdminAlreadyExistException;
 import com.school.sba.exception.UserNotFoundByIdException;
+import com.school.sba.repository.AcademicProgramRepository;
 import com.school.sba.repository.UserRepository;
 import com.school.sba.requestdto.UserRequest;
 import com.school.sba.responsedto.UserResponse;
@@ -23,6 +26,9 @@ public class UserServiceImpl implements lUserService {
 
 	@Autowired
 	private UserRepository userRepo;
+	
+	@Autowired 
+	private AcademicProgramRepository acaRepo;
 
 	@Autowired
 	private ResponseStructure<UserResponse> rsu;
@@ -47,7 +53,7 @@ public class UserServiceImpl implements lUserService {
 		}
 
 		else {
-
+			
 			User user = userRepo.save(mapToUser(userRequest));
 			rsu.setStatus(HttpStatus.CREATED.value());
 			rsu.setMessage("user data inserted successfully");
@@ -55,7 +61,8 @@ public class UserServiceImpl implements lUserService {
 
 			return new ResponseEntity<ResponseStructure<UserResponse>>(rsu, HttpStatus.CREATED);
 		}
-
+			
+		
 	}
 
 	private UserResponse mapToUserResponse(User user) {
@@ -98,5 +105,31 @@ public class UserServiceImpl implements lUserService {
 		
 		
 	}
+
+	@Override
+	public ResponseEntity<ResponseStructure<UserResponse>> addUserToProgram(Integer programId, Integer userId) {
+		User userd = userRepo.findById(userId)
+				.orElseThrow(() -> new UserNotFoundByIdException("User Not Found"));
+		
+		AcademicProgram apd = acaRepo.findById(programId)
+				.orElseThrow(()-> new AcademicProgramNotFoundException("Academic program not found"));
+		
+		userd.getAcademicPrograms().add(apd);
+		apd.getUsers().add(userd);
+		
+		User user = userRepo.save(userd);
+		acaRepo.save(apd);
+		
+		rsu.setStatus(HttpStatus.OK.value());
+		rsu.setMessage("user data mapped successfully");
+		rsu.setData(mapToUserResponse(user));
+		return new ResponseEntity<ResponseStructure<UserResponse>>(rsu, HttpStatus.OK);
+		
+		
+		
+		
+	}
+
+
 
 }

@@ -16,4 +16,6 @@ public interface lUserService {
 
 	public ResponseEntity<ResponseStructure<UserResponse>> softDeleteUser(Integer userId);
 
+	public ResponseEntity<ResponseStructure<UserResponse>> addUserToProgram(Integer programId, Integer userId);
+
 }

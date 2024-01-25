@@ -1,12 +1,10 @@
 package com.school.sba.entity;
 
-
-
+import java.time.LocalTime;
 import java.util.List;
 
-import com.school.sba.entity.enums.UserRole;
+import com.school.sba.entity.enums.ProgramType;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -19,36 +17,30 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Setter
-@Getter
+
 @Entity
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class User {
+public class AcademicProgram {
+	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Integer userId;
+	private int programId;
+	private ProgramType programType;
+	private String programName;
+	private LocalTime programBeginsAt;
+	private LocalTime programEndsAt;
 	
-	@Column(unique = true)
-	private String userName;
-	private String userPass;
-	private String userFirstName;
-	private String userLastName;
-	
-	@Column(unique = true)
-	private long userContact;
-	
-	@Column(unique = true)
-	private String userEmail;
-	private UserRole userRole;
-	
-	private boolean isdeleted;
-	
-	@ManyToOne
+	@ManyToOne	
 	private School school;
 	
 	@ManyToMany
-	List<AcademicProgram> academicPrograms;
+	private List<Subject> listOfSubject;
+	
+	@ManyToMany(mappedBy = "academicPrograms")
+	private List<User> users;
 
 }
