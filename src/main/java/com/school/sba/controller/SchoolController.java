@@ -1,7 +1,5 @@
 package com.school.sba.controller;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -43,11 +41,6 @@ public class SchoolController {
 	@GetMapping("/{schoolId}")
 	public ResponseEntity<ResponseStructure<School>> findSchool(@PathVariable Integer schoolId){
 		return schoolService.findSchool(schoolId);
-	}
-
-	@GetMapping
-	public ResponseEntity<ResponseStructure<List<School>>> findAllSchool(){
-		return schoolService.findAllSchool();
 	}
 	
 }
