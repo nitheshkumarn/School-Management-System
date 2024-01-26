@@ -18,6 +18,7 @@ import com.school.sba.exception.AdminAlreadyExistException;
 import com.school.sba.exception.AdminCannotBeAssignedToAcademicProgram;
 import com.school.sba.exception.AdminNotFoundException;
 import com.school.sba.exception.OnlyTeacherCanBeAssignedToSubjectException;
+import com.school.sba.exception.SubjectCannotBeAssignedToStudentException;
 import com.school.sba.exception.SubjectNotFoundException;
 import com.school.sba.exception.UserNotFoundByIdException;
 import com.school.sba.repository.AcademicProgramRepository;
@@ -32,7 +33,6 @@ import com.school.sba.util.ResponseStructure;
 @Service
 
 public class UserServiceImpl implements lUserService {
-	
 
 	@Autowired
 	private PasswordEncoder passwordEncoder;
@@ -42,7 +42,7 @@ public class UserServiceImpl implements lUserService {
 
 	@Autowired
 	private ISubjectRepository subjectRepository;
-	
+
 	@Autowired
 	private ISchoolRepository schoolRepository;
 
@@ -54,9 +54,9 @@ public class UserServiceImpl implements lUserService {
 
 	private User mapToUser(UserRequest userRequest) {
 		return User.builder().userName(userRequest.getUserName()).userEmail(userRequest.getUserEmail())
-				.userPass(passwordEncoder.encode(userRequest.getUserPass())).userFirstName(userRequest.getUserFirstName())
-				.userLastName(userRequest.getUserLastName()).userRole(userRequest.getUserRole())
-				.userContact(userRequest.getUserContact()).build();
+				.userPass(passwordEncoder.encode(userRequest.getUserPass()))
+				.userFirstName(userRequest.getUserFirstName()).userLastName(userRequest.getUserLastName())
+				.userRole(userRequest.getUserRole()).userContact(userRequest.getUserContact()).build();
 	}
 
 	private UserResponse mapToUserResponse(User user) {
@@ -144,17 +144,28 @@ public class UserServiceImpl implements lUserService {
 				throw new AdminCannotBeAssignedToAcademicProgram("admin cannot be assigned");
 			} else {
 				return academicProgramRepository.findById(programId).map(academicProgram -> {
-					academicProgram.getUsers().add(user);
-					user.getAcademicPrograms().add(academicProgram);
+					if (academicProgram.getListOfSubject().contains(user.getSubject())) {
 
-					userRepo.save(user);
-					academicProgramRepository.save(academicProgram);
+						if (user.getUserRole().equals(UserRole.TEACHER)) {
 
-					rsu.setStatus(HttpStatus.OK.value());
-					rsu.setMessage("assigned to academic program successfully");
-					rsu.setData(mapToUserResponse(user));
+							academicProgram.getUsers().add(user);
+							user.getAcademicPrograms().add(academicProgram);
 
-					return new ResponseEntity<ResponseStructure<UserResponse>>(rsu, HttpStatus.OK);
+							userRepo.save(user);
+							academicProgramRepository.save(academicProgram);
+
+							rsu.setStatus(HttpStatus.OK.value());
+							rsu.setMessage("assigned to academic program successfully");
+							rsu.setData(mapToUserResponse(user));
+
+							return new ResponseEntity<ResponseStructure<UserResponse>>(rsu, HttpStatus.OK);
+
+						} else {
+							throw new SubjectCannotBeAssignedToStudentException("subject can't be assigned to subject");
+						}
+					} else {
+						throw new SubjectNotFoundException("subject not found");
+					}
 
 				}).orElseThrow(() -> new AcademicProgramNotFoundException("academic program not found"));
 			}
@@ -164,7 +175,7 @@ public class UserServiceImpl implements lUserService {
 
 	@Override
 	public ResponseEntity<ResponseStructure<UserResponse>> addOtherUser(UserRequest userRequest) {
-		
+
 		String username = SecurityContextHolder.getContext().getAuthentication().getName();
 		if (userRequest.getUserRole().equals(UserRole.ADMIN)) {
 			throw new AdminAlreadyExistException("admin already found");
@@ -176,15 +187,13 @@ public class UserServiceImpl implements lUserService {
 				user.setSchool(school);
 				user = userRepo.save(user);
 
-
 				rsu.setStatus(HttpStatus.CREATED.value());
-				rsu.setMessage( user.getUserRole().name() +" saved successfully");
+				rsu.setMessage(user.getUserRole().name().toLowerCase() + " saved successfully");
 				rsu.setData(mapToUserResponse(user));
 
 				return new ResponseEntity<ResponseStructure<UserResponse>>(rsu, HttpStatus.CREATED);
 
-			})
-			.orElseThrow(() -> new AdminNotFoundException("admin not found"));
+			}).orElseThrow(() -> new AdminNotFoundException("admin not found"));
 		}
 	}
 

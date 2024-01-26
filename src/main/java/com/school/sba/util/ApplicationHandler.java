@@ -25,6 +25,7 @@ import com.school.sba.exception.ScheduleNotFoundException;
 import com.school.sba.exception.SchoolAlreadyExistException;
 import com.school.sba.exception.SchoolInsertionFailedException;
 import com.school.sba.exception.SchoolNotFoundByIdException;
+import com.school.sba.exception.SubjectCannotBeAssignedToStudentException;
 import com.school.sba.exception.SubjectNotFoundException;
 import com.school.sba.exception.UserNotFoundByIdException;
 
@@ -65,6 +66,13 @@ public class ApplicationHandler extends ResponseEntityExceptionHandler {
 		return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "School Already Exist to this ADMIN");
 	}
 	
+	public ResponseEntity<Object> handleSchoolInsertionFailed(SchoolInsertionFailedException exception) {
+
+		return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "Only ADMIN cn create school");
+	}
+	
+	
+	
 	@ExceptionHandler(ScheduleNotFoundException.class)
 	public ResponseEntity<Object> handleScheduleNotFoundException(ScheduleNotFoundException exception) {
 		return structure(HttpStatus.NOT_FOUND, exception.getMessage(), "Schedule not found, Try adding the schedule first");
@@ -104,6 +112,11 @@ public class ApplicationHandler extends ResponseEntityExceptionHandler {
 		@ExceptionHandler(AdminCannotBeAssignedToAcademicProgram.class)
 		public ResponseEntity<Object> handleAdminCannotBeAssignedToAcademicProgram(AdminCannotBeAssignedToAcademicProgram exception) {
 			return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "admin cannot be assigned to academic programs");
+		}
+		
+		@ExceptionHandler(SubjectCannotBeAssignedToStudentException.class)
+		public ResponseEntity<Object> handleSubjectCannotBeAssignedToStudentException(SubjectCannotBeAssignedToStudentException exception) {
+			return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "Subject Cannot Be Assigned To Student");
 		}
 	
 }

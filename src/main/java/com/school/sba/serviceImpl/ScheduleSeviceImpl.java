@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.school.sba.entity.Schedule;
 import com.school.sba.entity.School;
+import com.school.sba.exception.ScheduleAlreadyPresentException;
 import com.school.sba.exception.ScheduleNotFoundException;
 import com.school.sba.exception.SchoolNotFoundByIdException;
 import com.school.sba.repository.IScheduleRepository;
@@ -74,7 +75,7 @@ public class ScheduleSeviceImpl implements IScheduleService {
 
 				return new ResponseEntity<ResponseStructure<ScheduleResponse>>(responseS, HttpStatus.CREATED);
 			} else
-				throw new RuntimeException();
+				throw new ScheduleAlreadyPresentException("Schedule already Present");
 		}).orElseThrow(() -> new SchoolNotFoundByIdException("School not found for the given Id"));
 	}
 

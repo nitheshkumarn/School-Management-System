@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.school.sba.entity.School;
 import com.school.sba.entity.enums.UserRole;
+import com.school.sba.exception.SchoolAlreadyExistException;
 import com.school.sba.exception.SchoolInsertionFailedException;
 import com.school.sba.exception.SchoolNotFoundByIdException;
 import com.school.sba.exception.UserNotFoundByIdException;
@@ -72,7 +73,7 @@ public class SchoolServiceImpl implements ISchoolService {
 							return new ResponseEntity<ResponseStructure<SchoolResponse>>(responseS, HttpStatus.CREATED);
 						}
 						else {
-							throw new SchoolInsertionFailedException("school is already present");
+							throw new SchoolAlreadyExistException("school is already present");
 						}
 					}
 					else {
