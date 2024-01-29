@@ -25,7 +25,7 @@ public class ScheduleController {
 	
 	@PreAuthorize("hasAuthority('ADMIN')")
 	@PostMapping("/schools/{schoolId}/schedules")
-	public ResponseEntity<ResponseStructure<ScheduleResponse>> saveSchool(@PathVariable Integer schoolId, @RequestBody ScheduleRequest scheduleRequest){
+	public ResponseEntity<ResponseStructure<ScheduleResponse>> saveSchedule(@PathVariable Integer schoolId, @RequestBody ScheduleRequest scheduleRequest){
 		return scheduleService.saveSchedule(schoolId,scheduleRequest);
 	}
 	

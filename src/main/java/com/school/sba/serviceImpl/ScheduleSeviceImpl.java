@@ -14,16 +14,12 @@ import com.school.sba.exception.ScheduleNotFoundException;
 import com.school.sba.exception.SchoolNotFoundByIdException;
 import com.school.sba.repository.IScheduleRepository;
 import com.school.sba.repository.ISchoolRepository;
-
 import com.school.sba.requestdto.ScheduleRequest;
-
 import com.school.sba.responsedto.ScheduleResponse;
-import com.school.sba.responsedto.SchoolResponse;
 import com.school.sba.service.IScheduleService;
 import com.school.sba.util.ResponseStructure;
 
 @Service
-
 public class ScheduleSeviceImpl implements IScheduleService {
 
 	@Autowired

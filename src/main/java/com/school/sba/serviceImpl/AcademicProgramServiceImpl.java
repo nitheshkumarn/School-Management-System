@@ -1,9 +1,7 @@
 package com.school.sba.serviceImpl;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,13 +11,11 @@ import org.springframework.stereotype.Service;
 
 import com.school.sba.entity.AcademicProgram;
 import com.school.sba.entity.Subject;
-import com.school.sba.exception.AcademicProgramNotFoundException;
 import com.school.sba.exception.SchoolNotFoundByIdException;
 import com.school.sba.repository.AcademicProgramRepository;
 import com.school.sba.repository.ISchoolRepository;
 import com.school.sba.repository.ISubjectRepository;
 import com.school.sba.requestdto.AcademicProgramRequest;
-import com.school.sba.requestdto.SubjectRequest;
 import com.school.sba.responsedto.AcademicProgramResponse;
 import com.school.sba.service.IAcademicProgramService;
 import com.school.sba.util.ResponseStructure;

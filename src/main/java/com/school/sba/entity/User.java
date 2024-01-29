@@ -49,9 +49,10 @@ public class User {
 	private School school;
 	
 	@ManyToMany
-	List<AcademicProgram> academicPrograms;
+	private List<AcademicProgram> academicPrograms;
 	
 	@ManyToOne
 	private Subject subject;
+	
 
 }
