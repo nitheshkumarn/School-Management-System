@@ -11,13 +11,16 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import com.school.sba.exception.AdminAlreadyExistException;
 import com.school.sba.exception.AdminCannotBeAssignedToAcademicProgram;
 import com.school.sba.exception.AdminNotFoundException;
+import com.school.sba.exception.ClassHourNotFoundByIdException;
 import com.school.sba.exception.OnlyTeacherCanBeAssignedToSubjectException;
+import com.school.sba.exception.RoomIsOccupiedException;
 import com.school.sba.exception.ScheduleAlreadyPresentException;
 import com.school.sba.exception.ScheduleNotFoundException;
 import com.school.sba.exception.SchoolAlreadyExistException;
 import com.school.sba.exception.SchoolInsertionFailedException;
 import com.school.sba.exception.SchoolNotFoundByIdException;
 import com.school.sba.exception.SubjectCannotBeAssignedToStudentException;
+import com.school.sba.exception.SubjectNotAssignedToClassHourException;
 import com.school.sba.exception.SubjectNotFoundException;
 import com.school.sba.exception.UserNotFoundByIdException;
 
@@ -109,6 +112,23 @@ public class ApplicationHandler extends ResponseEntityExceptionHandler {
 		@ExceptionHandler(SubjectCannotBeAssignedToStudentException.class)
 		public ResponseEntity<Object> handleSubjectCannotBeAssignedToStudentException(SubjectCannotBeAssignedToStudentException exception) {
 			return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "Subject Cannot Be Assigned To Student");
+		}
+		
+		@ExceptionHandler(ClassHourNotFoundByIdException.class)
+		public ResponseEntity<Object> handleClassHourNotFound(ClassHourNotFoundByIdException exception) {
+			return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "ClassHour not found for the specified id");
+		}
+		
+		@ExceptionHandler(SubjectNotAssignedToClassHourException.class)
+		public ResponseEntity<Object> handleClassHourAssigning(SubjectNotAssignedToClassHourException exception) {
+			return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "ClassHour not assigned by subject/teacher");
+		}
+		
+		
+		
+		@ExceptionHandler(RoomIsOccupiedException.class)
+		public ResponseEntity<Object> handleRoomOccupied(RoomIsOccupiedException exception) {
+			return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "ClassRoom Already Occupied by other class");
 		}
 	
 }
