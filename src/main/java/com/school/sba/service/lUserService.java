@@ -1,5 +1,7 @@
 package com.school.sba.service;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 
 import com.school.sba.requestdto.UserRequest;
@@ -23,5 +25,8 @@ public interface lUserService {
 	public ResponseEntity<ResponseStructure<UserResponse>> assignSubjectToTeacher(int subjectId, int userId);
 
 	public ResponseEntity<ResponseStructure<UserResponse>> assignUserToProgram(Integer programId, Integer userId);
+
+	public ResponseEntity<ResponseStructure<List<UserResponse>>> getUsersByRoleAndAcademicProgram(int programId,
+			String userRole);
 
 }

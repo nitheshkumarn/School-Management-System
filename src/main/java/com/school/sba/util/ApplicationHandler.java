@@ -12,6 +12,7 @@ import com.school.sba.exception.AdminAlreadyExistException;
 import com.school.sba.exception.AdminCannotBeAssignedToAcademicProgram;
 import com.school.sba.exception.AdminNotFoundException;
 import com.school.sba.exception.ClassHourNotFoundByIdException;
+import com.school.sba.exception.IllegalArguementException;
 import com.school.sba.exception.OnlyTeacherCanBeAssignedToSubjectException;
 import com.school.sba.exception.RoomIsOccupiedException;
 import com.school.sba.exception.ScheduleAlreadyPresentException;
@@ -129,6 +130,11 @@ public class ApplicationHandler extends ResponseEntityExceptionHandler {
 		@ExceptionHandler(RoomIsOccupiedException.class)
 		public ResponseEntity<Object> handleRoomOccupied(RoomIsOccupiedException exception) {
 			return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "ClassRoom Already Occupied by other class");
+		}
+		
+		@ExceptionHandler(IllegalArguementException.class)
+		public ResponseEntity<Object> handleRoomOccupied(IllegalArguementException exception) {
+			return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "Illegal arguement for the field");
 		}
 	
 }

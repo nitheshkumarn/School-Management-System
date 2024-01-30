@@ -9,10 +9,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.school.sba.requestdto.AcademicProgramRequest;
 import com.school.sba.responsedto.AcademicProgramResponse;
+import com.school.sba.responsedto.UserResponse;
 import com.school.sba.service.IAcademicProgramService;
 import com.school.sba.util.ResponseStructure;
 
@@ -33,6 +35,9 @@ public class AcademicController {
 	public ResponseEntity<ResponseStructure<List<AcademicProgramResponse>>> findAllAcademicProgram(@PathVariable("schoolId") int schoolId){
 		return academicProgramService.findAllAcademicProgram(schoolId);
 	}
+	
+	
+	
 	
 //	@PutMapping("/academic-programs/{programId}")
 //	public ResponseEntity<ResponseStructure<AcademicProgramResponse>> updateSubject(@PathVariable("programId") int programId,

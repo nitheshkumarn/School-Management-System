@@ -17,6 +17,7 @@ import com.school.sba.repository.ISchoolRepository;
 import com.school.sba.repository.ISubjectRepository;
 import com.school.sba.requestdto.AcademicProgramRequest;
 import com.school.sba.responsedto.AcademicProgramResponse;
+import com.school.sba.responsedto.UserResponse;
 import com.school.sba.service.IAcademicProgramService;
 import com.school.sba.util.ResponseStructure;
 
@@ -108,6 +109,9 @@ public class AcademicProgramServiceImpl implements IAcademicProgramService {
 			}
 		}).orElseThrow(() -> new SchoolNotFoundByIdException("school not found"));
 	}
+
+	
+	
 
 //	@Override
 //	public ResponseEntity<ResponseStructure<AcademicProgramResponse>> updateSubject(int programId,
