@@ -13,11 +13,13 @@ public interface ISchoolService {
 
 	ResponseEntity<ResponseStructure<SchoolResponse>> saveSchool(SchoolRequest schoolRequest);
 	
-	ResponseEntity<ResponseStructure<School>> deleteSchool(Integer schoolId);
+	//ResponseEntity<ResponseStructure<School>> deleteSchool(Integer schoolId);
 
 	ResponseEntity<ResponseStructure<SchoolResponse>> updateSchool(Integer schoolId, SchoolRequest schoolRequest);
 
 	ResponseEntity<ResponseStructure<School>> findSchool(Integer schoolId);
+
+	ResponseEntity<ResponseStructure<SchoolResponse>> softDeleteSchool(Integer schoolId);
 
 	
 	

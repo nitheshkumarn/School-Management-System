@@ -47,14 +47,10 @@ public class ScheduleSeviceImpl implements IScheduleService {
 				.classHoursLengthInMin(
 						(int) (Duration.ofMinutes(schedule.getClassHoursLengthInMin().toMinutes()).toMinutes()))
 				.breakTime(schedule.getBreakTime())
-				.breakLengthInMin(
-						((int) (Duration.ofMinutes(schedule.getBreakLengthInMin().toMinutes()).toMinutes())))
-				.lunchLengthInMin(
-						(int) (Duration.ofMinutes(schedule.getLunchLengthInMin().toMinutes()).toMinutes()))
+				.breakLengthInMin(((int) (Duration.ofMinutes(schedule.getBreakLengthInMin().toMinutes()).toMinutes())))
+				.lunchLengthInMin((int) (Duration.ofMinutes(schedule.getLunchLengthInMin().toMinutes()).toMinutes()))
 				.lunchTime(schedule.getLunchTime()).build();
 	}
-
-
 
 	@Override
 	public ResponseEntity<ResponseStructure<ScheduleResponse>> saveSchedule(Integer schoolId,
@@ -81,34 +77,44 @@ public class ScheduleSeviceImpl implements IScheduleService {
 		School school = schoolRepo.findById(schoolId)
 				.orElseThrow(() -> new SchoolNotFoundByIdException("School not found"));
 
-		return scheduleRepo.findById(school.getSchedule().getScheduleId())
-				.map(schedule -> {
-					responseS.setStatus(HttpStatus.FOUND.value());
-					responseS.setMessage("schedule found");
-					responseS.setData(mapToScheduleResponse(schedule));
+		return scheduleRepo.findById(school.getSchedule().getScheduleId()).map(schedule -> {
+			responseS.setStatus(HttpStatus.FOUND.value());
+			responseS.setMessage("schedule found");
+			responseS.setData(mapToScheduleResponse(schedule));
 
-					return new ResponseEntity<ResponseStructure<ScheduleResponse>>(responseS, HttpStatus.FOUND);
-				})
-				.orElseThrow(() -> new ScheduleNotFoundException("schedule not found"));
+			return new ResponseEntity<ResponseStructure<ScheduleResponse>>(responseS, HttpStatus.FOUND);
+		}).orElseThrow(() -> new ScheduleNotFoundException("schedule not found"));
 	}
 
 	@Override
 	public ResponseEntity<ResponseStructure<ScheduleResponse>> updateSchedule(int scheduleId,
 			ScheduleRequest scheduleRequest) {
 
-		return scheduleRepo.findById(scheduleId)
-				.map(schedule -> {
-					Schedule mapToSchedule = mapToSchedule(scheduleRequest);
-					mapToSchedule.setScheduleId(scheduleId);
-					schedule = scheduleRepo.save(mapToSchedule);
+		return scheduleRepo.findById(scheduleId).map(schedule -> {
+			Schedule mapToSchedule = mapToSchedule(scheduleRequest);
+			mapToSchedule.setScheduleId(scheduleId);
+			schedule = scheduleRepo.save(mapToSchedule);
 
-					responseS.setStatus(HttpStatus.OK.value());
-					responseS.setMessage("schedule updated successfully");
-					responseS.setData(mapToScheduleResponse(schedule));
+			responseS.setStatus(HttpStatus.OK.value());
+			responseS.setMessage("schedule updated successfully");
+			responseS.setData(mapToScheduleResponse(schedule));
 
-					return new ResponseEntity<ResponseStructure<ScheduleResponse>>(responseS, HttpStatus.OK);
-				})
-				.orElseThrow(() -> new ScheduleNotFoundException("schedule not found"));
+			return new ResponseEntity<ResponseStructure<ScheduleResponse>>(responseS, HttpStatus.OK);
+		}).orElseThrow(() -> new ScheduleNotFoundException("schedule not found"));
 
+	}
+
+	public ResponseEntity<ResponseStructure<ScheduleResponse>> deleteSchedule(Schedule schedule) {
+
+		schedule = scheduleRepo.findById(schedule.getScheduleId())
+				.orElseThrow(() -> new ScheduleNotFoundException("User Not Found"));
+
+		scheduleRepo.deleteById(schedule.getScheduleId());
+
+		responseS.setStatus(HttpStatus.OK.value());
+		responseS.setMessage("user data DELETED successfully");
+		responseS.setData(mapToScheduleResponse(schedule));
+
+		return new ResponseEntity<ResponseStructure<ScheduleResponse>>(responseS, HttpStatus.OK);
 	}
 }

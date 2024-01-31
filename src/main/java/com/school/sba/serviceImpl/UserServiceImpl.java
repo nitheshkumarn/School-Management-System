@@ -12,8 +12,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.school.sba.entity.AcademicProgram;
+import com.school.sba.entity.ClassHour;
 import com.school.sba.entity.School;
-import com.school.sba.entity.Subject;
 import com.school.sba.entity.User;
 import com.school.sba.entity.enums.UserRole;
 import com.school.sba.exception.AcademicProgramNotFoundException;
@@ -26,14 +26,15 @@ import com.school.sba.exception.SubjectCannotBeAssignedToStudentException;
 import com.school.sba.exception.SubjectNotFoundException;
 import com.school.sba.exception.UserNotFoundByIdException;
 import com.school.sba.repository.AcademicProgramRepository;
-import com.school.sba.repository.ISchoolRepository;
+import com.school.sba.repository.IClassHourRepository;
 import com.school.sba.repository.ISubjectRepository;
 import com.school.sba.repository.UserRepository;
 import com.school.sba.requestdto.UserRequest;
-import com.school.sba.responsedto.SubjectResponse;
 import com.school.sba.responsedto.UserResponse;
 import com.school.sba.service.lUserService;
 import com.school.sba.util.ResponseStructure;
+
+import jakarta.transaction.Transactional;
 
 @Service
 
@@ -49,11 +50,11 @@ public class UserServiceImpl implements lUserService {
 	private ISubjectRepository subjectRepository;
 
 	@Autowired
-	private ISchoolRepository schoolRepository;
+	private AcademicProgramRepository academicProgramRepository;
 
 	@Autowired
-	private AcademicProgramRepository academicProgramRepository;
-	
+	private IClassHourRepository classHourRepo;
+
 	@Autowired
 	private ResponseStructure<List<UserResponse>> listStructure;
 
@@ -81,7 +82,7 @@ public class UserServiceImpl implements lUserService {
 				.userLastName(user.getUserLastName()).userRole(user.getUserRole()).userContact(user.getUserContact())
 				.academicPrograms(listOfProgramName).build();
 	}
-	
+
 	private List<UserResponse> mapTOListOfUserResponse(List<User> listOfUsers) {
 		List<UserResponse> listOfUserResponse = new ArrayList<>();
 
@@ -168,8 +169,7 @@ public class UserServiceImpl implements lUserService {
 				throw new AdminCannotBeAssignedToAcademicProgram("admin cannot be assigned");
 			} else {
 				return academicProgramRepository.findById(programId).map(academicProgram -> {
-					if (user.getUserRole().equals(UserRole.TEACHER))
-				 {
+					if (user.getUserRole().equals(UserRole.TEACHER)) {
 
 						if (academicProgram.getListOfSubject().contains(user.getSubject())) {
 
@@ -188,8 +188,9 @@ public class UserServiceImpl implements lUserService {
 						} else {
 							throw new SubjectCannotBeAssignedToStudentException("subject can't be assigned to Teacher");
 						}
-					} if (user.getUserRole().equals(UserRole.STUDENT)) {
-						
+					}
+					if (user.getUserRole().equals(UserRole.STUDENT)) {
+
 						academicProgram.getUsers().add(user);
 						user.getAcademicPrograms().add(academicProgram);
 
@@ -201,9 +202,8 @@ public class UserServiceImpl implements lUserService {
 						rsu.setData(mapToUserResponse(user));
 
 						return new ResponseEntity<ResponseStructure<UserResponse>>(rsu, HttpStatus.OK);
-						
-					}
-					else
+
+					} else
 						throw new RuntimeException();
 
 				}).orElseThrow(() -> new AcademicProgramNotFoundException("academic program not found"));
@@ -274,36 +274,59 @@ public class UserServiceImpl implements lUserService {
 	@Override
 	public ResponseEntity<ResponseStructure<List<UserResponse>>> getUsersByRoleAndAcademicProgram(int programId,
 			String userRole) {
-		
-		AcademicProgram academicProgram = academicProgramRepository.findById(programId).orElseThrow(()-> new AcademicProgramNotFoundException("Academic Program not found for given ID"));
-		
+
+		AcademicProgram academicProgram = academicProgramRepository.findById(programId)
+				.orElseThrow(() -> new AcademicProgramNotFoundException("Academic Program not found for given ID"));
+
 		List<User> listOfUsers = null;
-		 UserRole role = UserRole.valueOf(userRole.toUpperCase());
-		 
-		 if(role.equals(UserRole.ADMIN))
-			 throw  new  IllegalArguementException("admin is not assigned to academic program");
-		 if(EnumSet.allOf(UserRole.class).contains(role)) {
-			 
-		 listOfUsers = userRepo.findByUserRoleAndAcademicPrograms(role, academicProgram);
-			 
-		 }
-		 
-		 if(listOfUsers.isEmpty()) {
-				listStructure.setStatus(HttpStatus.NOT_FOUND.value());
-				listStructure.setMessage("No subjects found");
-				listStructure.setData(mapTOListOfUserResponse(listOfUsers));
+		UserRole role = UserRole.valueOf(userRole.toUpperCase());
 
-				return new ResponseEntity<ResponseStructure<List<UserResponse>>>(listStructure, HttpStatus.NOT_FOUND);
-			}
-			else {
-				listStructure.setStatus(HttpStatus.FOUND.value());
-				listStructure.setMessage("list of subjects found");
-				listStructure.setData(mapTOListOfUserResponse(listOfUsers));
+		if (role.equals(UserRole.ADMIN))
+			throw new IllegalArguementException("admin is not assigned to academic program");
+		if (EnumSet.allOf(UserRole.class).contains(role)) {
 
-				return new ResponseEntity<ResponseStructure<List<UserResponse>>>(listStructure, HttpStatus.FOUND);
+			listOfUsers = userRepo.findByUserRoleAndAcademicPrograms(role, academicProgram);
+
+		}
+
+		if (listOfUsers.isEmpty()) {
+			listStructure.setStatus(HttpStatus.NOT_FOUND.value());
+			listStructure.setMessage("No subjects found");
+			listStructure.setData(mapTOListOfUserResponse(listOfUsers));
+
+			return new ResponseEntity<ResponseStructure<List<UserResponse>>>(listStructure, HttpStatus.NOT_FOUND);
+		} else {
+			listStructure.setStatus(HttpStatus.FOUND.value());
+			listStructure.setMessage("list of subjects found");
+			listStructure.setData(mapTOListOfUserResponse(listOfUsers));
+
+			return new ResponseEntity<ResponseStructure<List<UserResponse>>>(listStructure, HttpStatus.FOUND);
+		}
+	}
+
+	@Transactional
+	public void hardDeleteUser(int userId) {
+		User user = userRepo.findById(userId).orElseThrow(() -> new UserNotFoundByIdException("User not found by Id"));
+
+
+ 
+			List<ClassHour> classHours = classHourRepo.findByUser(user);
+			for (ClassHour classHour : classHours) {
+				classHour.setUser(null);
+				classHourRepo.save(classHour);
 			}
+
+			List<AcademicProgram> academicPrograms = user.getAcademicPrograms();
+
+			for (AcademicProgram academicProgram : academicPrograms) {
+
+			 academicProgram.setUsers(null);
+			 academicProgramRepository.save(academicProgram);
+			}
+			userRepo.delete(user);
+
+		}
+
 	}
 
 
-
-}
