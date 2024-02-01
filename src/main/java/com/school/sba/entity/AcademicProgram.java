@@ -35,6 +35,7 @@ public class AcademicProgram {
 	private LocalDate programBeginsAt;
 	private LocalDate programEndsAt;
 	private boolean isDeleted;
+	private boolean autoRepeat;
 	
 	
 	@ManyToOne	

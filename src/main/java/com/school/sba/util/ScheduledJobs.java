@@ -9,8 +9,10 @@ import org.springframework.stereotype.Component;
 import com.school.sba.entity.AcademicProgram;
 import com.school.sba.entity.User;
 import com.school.sba.repository.AcademicProgramRepository;
+import com.school.sba.repository.IClassHourRepository;
 import com.school.sba.repository.UserRepository;
 import com.school.sba.serviceImpl.AcademicProgramServiceImpl;
+import com.school.sba.serviceImpl.ClassHourServiceImplementation;
 import com.school.sba.serviceImpl.UserServiceImpl;
 
 @Component
@@ -27,6 +29,11 @@ public class ScheduledJobs {
 	
 	@Autowired
 	AcademicProgramServiceImpl api;
+	
+	
+	
+	@Autowired
+	ClassHourServiceImplementation chi;
 	
 	
 	
@@ -52,5 +59,20 @@ public class ScheduledJobs {
 				System.out.println("deleted successfully");
 			}
 	}
+		
+		@Scheduled(cron = "0 0 0 ? * MON")
+		void classHourWeekly() {
+			
+			AcademicProgram ap = academicProgramRepo.findById(1).orElseThrow();
+			
+			if(ap.isAutoRepeat()) {
+				
+				
+				chi.duplicateClassHoursForNextWeek(ap);
+				
+			}
+			
+			
+		}
 
 }
