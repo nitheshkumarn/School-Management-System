@@ -1,19 +1,15 @@
 package com.school.sba.exception;
 
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 @AllArgsConstructor
-public class SchoolInsertionFailedException extends RuntimeException {
-
+@Getter
+public class SchoolNotFoundByIdException extends RuntimeException {
+	
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
 	private String message;
-	
-	@Override
-	public String getMessage() {
-		return message;
-	}
-
 }

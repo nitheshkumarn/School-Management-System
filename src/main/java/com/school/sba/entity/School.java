@@ -1,20 +1,28 @@
 package com.school.sba.entity;
 
-import org.springframework.stereotype.Component;
 
+import java.util.List;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 
 @Setter
 @Getter
-@Component
 @Entity
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class School {
 	
 	@Id
@@ -24,8 +32,13 @@ public class School {
 	private Long schoolContactNumber;
 	private String schoolEmailId;
 	private String schoolAddress;
+	private boolean isDeleted;
 	
 	@OneToOne
 	private Schedule schedule;
+	
+	@OneToMany(mappedBy = "school",cascade = CascadeType.REMOVE)
+	private List<AcademicProgram> listOfAcademicPrograms;
+	
 	
 }
