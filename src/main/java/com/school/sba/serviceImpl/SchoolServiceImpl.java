@@ -12,6 +12,8 @@ import com.school.sba.exception.SchoolAlreadyExistException;
 import com.school.sba.exception.SchoolInsertionFailedException;
 import com.school.sba.exception.SchoolNotFoundByIdException;
 import com.school.sba.exception.UserNotFoundByIdException;
+import com.school.sba.repository.AcademicProgramRepository;
+import com.school.sba.repository.IClassHourRepository;
 import com.school.sba.repository.ISchoolRepository;
 import com.school.sba.repository.UserRepository;
 import com.school.sba.requestdto.SchoolRequest;
@@ -27,6 +29,12 @@ public class SchoolServiceImpl implements ISchoolService {
 
 	@Autowired
 	private UserRepository userRepo;
+	
+	@Autowired
+	private IClassHourRepository classHourRepo;
+
+	@Autowired
+	private AcademicProgramRepository academicProgramRepo;
 
 	@Autowired
 	private ResponseStructure<School> responseStructure;
@@ -42,45 +50,42 @@ public class SchoolServiceImpl implements ISchoolService {
 	}
 
 	private SchoolResponse mapToSchoolResponse(School school) {
-		return SchoolResponse.builder().schoolId(school.getSchoolId()).schoolName(school.getSchoolName()).schoolEmailId(school.getSchoolEmailId()).schoolContactNumber(school.getSchoolContactNumber())
+		return SchoolResponse.builder().schoolId(school.getSchoolId()).schoolName(school.getSchoolName())
+				.schoolEmailId(school.getSchoolEmailId()).schoolContactNumber(school.getSchoolContactNumber())
 				.schoolAddress(school.getSchoolAddress()).build();
 	}
 
 	@Override
 	public ResponseEntity<ResponseStructure<SchoolResponse>> saveSchool(SchoolRequest schoolRequest) {
-		String username = SecurityContextHolder.getContext()
-				.getAuthentication()
-				.getName();
-		
-		// no need of taking the userId from the url beacuse we are retriving the username from the securityContextHolder.
-		// no need of passing the userId unless or until we have to deal with the another user.
-		
-		return userRepo.findByUserName(username)
-				.map(user -> {
-					if(user.getUserRole().equals(UserRole.ADMIN)) {
-						if(user.getSchool() == null) {
-							School school = schoolRepo.save(mapToSchool(schoolRequest));
+		String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
-							userRepo.findAll().forEach(userFromRepo -> {
-								userFromRepo.setSchool(school);
-								userRepo.save(user);
-							});
+		// no need of taking the userId from the url beacuse we are retriving the
+		// username from the securityContextHolder.
+		// no need of passing the userId unless or until we have to deal with the
+		// another user.
 
-							responseS.setStatus(HttpStatus.CREATED.value());
-							responseS.setMessage("School inserted successfully");
-							responseS.setData(mapToSchoolResponse(school));
+		return userRepo.findByUserName(username).map(user -> {
+			if (user.getUserRole().equals(UserRole.ADMIN)) {
+				if (user.getSchool() == null) {
+					School school = schoolRepo.save(mapToSchool(schoolRequest));
 
-							return new ResponseEntity<ResponseStructure<SchoolResponse>>(responseS, HttpStatus.CREATED);
-						}
-						else {
-							throw new SchoolAlreadyExistException("school is already present");
-						}
-					}
-					else {
-						throw new SchoolInsertionFailedException("school can be created only by ADMIN");
-					}
-				})
-				.orElseThrow(() -> new UserNotFoundByIdException("user not found"));
+					userRepo.findAll().forEach(userFromRepo -> {
+						userFromRepo.setSchool(school);
+						userRepo.save(user);
+					});
+
+					responseS.setStatus(HttpStatus.CREATED.value());
+					responseS.setMessage("School inserted successfully");
+					responseS.setData(mapToSchoolResponse(school));
+
+					return new ResponseEntity<ResponseStructure<SchoolResponse>>(responseS, HttpStatus.CREATED);
+				} else {
+					throw new SchoolAlreadyExistException("school is already present");
+				}
+			} else {
+				throw new SchoolInsertionFailedException("school can be created only by ADMIN");
+			}
+		}).orElseThrow(() -> new UserNotFoundByIdException("user not found"));
 	}
 
 //	
@@ -88,19 +93,18 @@ public class SchoolServiceImpl implements ISchoolService {
 	public ResponseEntity<ResponseStructure<SchoolResponse>> updateSchool(Integer schoolId, SchoolRequest schoolRequest)
 			throws SchoolNotFoundByIdException {
 
-		return schoolRepo.findById(schoolId)
-				.map( school -> {
-					school = mapToSchool(schoolRequest);
-					school.setSchoolId(schoolId);
-					school = schoolRepo.save(school);
-					
-					responseS.setStatus(HttpStatus.OK.value());
-					responseS.setMessage("School data updated successfully in database");
-					responseS.setData(mapToSchoolResponse(school));
+		return schoolRepo.findById(schoolId).map(school -> {
+			school = mapToSchool(schoolRequest);
+			school.setSchoolId(schoolId);
+			school = schoolRepo.save(school);
 
-					return new ResponseEntity<ResponseStructure<SchoolResponse>>(responseS, HttpStatus.OK);
-				})
-				.orElseThrow(() -> new SchoolNotFoundByIdException("school object cannot be updated due to absence of technical problems"));
+			responseS.setStatus(HttpStatus.OK.value());
+			responseS.setMessage("School data updated successfully in database");
+			responseS.setData(mapToSchoolResponse(school));
+
+			return new ResponseEntity<ResponseStructure<SchoolResponse>>(responseS, HttpStatus.OK);
+		}).orElseThrow(() -> new SchoolNotFoundByIdException(
+				"school object cannot be updated due to absence of technical problems"));
 
 	}
 
@@ -136,20 +140,17 @@ public class SchoolServiceImpl implements ISchoolService {
 
 	}
 
-//	@Override
-//	public ResponseEntity<ResponseStructure<School>> deleteSchool(Integer schoolId) {
-//
-//		School existingSchool = schoolRepo.findById(schoolId).orElseThrow(
-//				() -> new SchoolNotFoundByIdException("school object cannot be deleted due to absence of school id"));
-//
-//		schoolRepo.deleteById(schoolId);
-//
-//		responseStructure.setStatus(HttpStatus.OK.value());
-//		responseStructure.setMessage("School data deleted successfully from database");
-//		responseStructure.setData(existingSchool);
-//
-//		return new ResponseEntity<ResponseStructure<School>>(responseStructure, HttpStatus.OK);
-//	}
-
+	public void deleteSchool(int schoolId) {
+		schoolRepo.findByIsDeleted(true).forEach(school -> {
+			
+			school.getListOfAcademicPrograms().forEach(ap->{
+				classHourRepo.deleteAll(ap.getClassHours());
+				academicProgramRepo.delete(ap);
+			});
+			userRepo.deleteAll(userRepo.findBySchool(school));
+			schoolRepo.delete(school);
+		});
+	}
 
 }
+

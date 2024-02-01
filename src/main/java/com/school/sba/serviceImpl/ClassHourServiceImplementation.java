@@ -1,7 +1,9 @@
 package com.school.sba.serviceImpl;
 
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.school.sba.entity.AcademicProgram;
 import com.school.sba.entity.ClassHour;
 import com.school.sba.entity.Schedule;
 import com.school.sba.entity.Subject;
@@ -221,5 +224,46 @@ public class ClassHourServiceImplementation implements IClassHourService {
 		return new ResponseEntity<ResponseStructure<List<ClassHourResponse>>>(listStructure, HttpStatus.FOUND);
 
 	}
+	
+	@Override
+    public ResponseEntity<ResponseStructure<String>> duplicateClassHoursForNextWeek(int programId) {
+        AcademicProgram academicProgram = academicProgramRepo.findById(programId)
+                .orElseThrow(() -> new AcademicProgramNotFoundException("Academic program not found"));
+
+        duplicateClassHoursForNextWeek(academicProgram);
+
+        structure.setStatus(HttpStatus.CREATED.value());
+        structure.setMessage("Class hours duplicated for the next week successfully");
+        structure.setData("Class hours duplicated for the next week successfully");
+
+        return new ResponseEntity<>(structure, HttpStatus.CREATED);
+    }
+
+    private void duplicateClassHoursForNextWeek(AcademicProgram academicProgram) {
+        List<ClassHour> classHoursForCurrentWeek = classHourRepo.findByAcademicProgramAndBeginsAtAfterAndBeginsAtBefore(
+        		academicProgram,
+                LocalDateTime.now().with(DayOfWeek.MONDAY).truncatedTo(ChronoUnit.DAYS),
+                LocalDateTime.now().with(DayOfWeek.SUNDAY).plusDays(1).truncatedTo(ChronoUnit.DAYS)   
+        );
+
+        List<ClassHour> duplicatedClassHoursForNextWeek = new ArrayList<>();
+
+        for (ClassHour classHour : classHoursForCurrentWeek) {
+            ClassHour duplicatedClassHour = ClassHour.builder()
+                    .academicProgram(academicProgram)
+                    .subject(classHour.getSubject())
+                    .beginsAt(classHour.getBeginsAt().plusWeeks(1))
+                    .endsAt(classHour.getEndsAt().plusWeeks(1))
+                    .roomNo(classHour.getRoomNo())
+                    .classStatus(classHour.getClassStatus())
+                    .user(classHour.getUser())
+                    .build();
+
+            duplicatedClassHoursForNextWeek.add(duplicatedClassHour);
+        }
+
+        classHourRepo.saveAll(duplicatedClassHoursForNextWeek);
+    }
+
 
 }
