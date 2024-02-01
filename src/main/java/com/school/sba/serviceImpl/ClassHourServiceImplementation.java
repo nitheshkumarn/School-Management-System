@@ -1,6 +1,7 @@
 package com.school.sba.serviceImpl;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
@@ -97,8 +98,25 @@ public class ClassHourServiceImplementation implements IClassHourService {
 
 			if (schedule != null) {
 
+				LocalDateTime starts = academicProgram.getClassHours().getFirst().getBeginsAt();
+				LocalDateTime ends = academicProgram.getClassHours().getLast().getEndsAt();
+
+				if ((LocalDate.now().isAfter(starts.toLocalDate())
+						&& LocalDate.now().isBefore(ends.toLocalDate()) == false)
+						&& (LocalDate.now().isAfter(academicProgram.getProgramBeginsAt())
+								&& LocalDate.now().isBefore(academicProgram.getProgramEndsAt())))
+					; //checking the existence of class hour must be validated
+
+				LocalDate nextSaturday = null;
+				if (LocalDate.now().equals(DayOfWeek.MONDAY) == false) {
+					nextSaturday = LocalDate.now().plusWeeks(1).with(DayOfWeek.SATURDAY);
+
+				} else
+					nextSaturday = LocalDate.now().with(DayOfWeek.SATURDAY);
+
 				int classHoursPerDay = schedule.getClassHoursPerDay();
 				int classHourLengthInMinutes = (int) schedule.getClassHoursLengthInMin().toMinutes();
+				LocalDate currentDate = LocalDate.now();
 
 				LocalDateTime currentTime = LocalDateTime.now().with(schedule.getOpensAt());
 				System.out.println(currentTime);
@@ -114,45 +132,49 @@ public class ClassHourServiceImplementation implements IClassHourService {
 				LocalTime lunchTimeEnd = lunchTimeStart.plusMinutes(schedule.getLunchLengthInMin().toMinutes());
 				System.out.println(lunchTimeEnd);
 
-				for (int day = 1; day <= 6; day++) {
+				while (currentDate.isBefore(nextSaturday)) {
+					if (currentTime.getDayOfWeek() != DayOfWeek.SUNDAY) {
 
-					for (int hour = 0; hour < classHoursPerDay + 2; hour++) {
+						for (int hour = 0; hour < classHoursPerDay + 2; hour++) {
 
-						ClassHour classHour = new ClassHour();
+							ClassHour classHour = new ClassHour();
 
-						if (!currentTime.toLocalTime().equals(lunchTimeStart) && !isLunchTime(currentTime, schedule)) {
+							if (!currentTime.toLocalTime().equals(lunchTimeStart)
+									&& !isLunchTime(currentTime, schedule)) {
 
-							if (!currentTime.toLocalTime().equals(breakTimeStart)
-									&& !isBreakTime(currentTime, schedule)) {
-								LocalDateTime beginsAt = currentTime;
-								LocalDateTime endsAt = beginsAt.plusMinutes(classHourLengthInMinutes);
-								System.out.println("inside if start time " + beginsAt);
-								System.out.println("inside if ends time " + endsAt);
+								if (!currentTime.toLocalTime().equals(breakTimeStart)
+										&& !isBreakTime(currentTime, schedule)) {
+									LocalDateTime beginsAt = currentTime;
+									LocalDateTime endsAt = beginsAt.plusMinutes(classHourLengthInMinutes);
+									System.out.println("inside if start time " + beginsAt);
+									System.out.println("inside if ends time " + endsAt);
 
-								classHour.setBeginsAt(beginsAt);
-								classHour.setEndsAt(endsAt);
-								classHour.setClassStatus(ClassStatus.NOT_SCHEDULED);
+									classHour.setBeginsAt(beginsAt);
+									classHour.setEndsAt(endsAt);
+									classHour.setClassStatus(ClassStatus.NOT_SCHEDULED);
 
-								currentTime = endsAt;
+									currentTime = endsAt;
+								} else {
+									System.out.println("inside else");
+									classHour.setBeginsAt(currentTime);
+									classHour.setEndsAt(LocalDateTime.now().with(breakTimeEnd));
+
+									classHour.setClassStatus(ClassStatus.BREAK_TIME);
+									currentTime = currentTime.plusMinutes(schedule.getBreakLengthInMin().toMinutes());
+								}
+
 							} else {
-								System.out.println("inside else");
 								classHour.setBeginsAt(currentTime);
-								classHour.setEndsAt(LocalDateTime.now().with(breakTimeEnd));
-
-								classHour.setClassStatus(ClassStatus.BREAK_TIME);
-								currentTime = currentTime.plusMinutes(schedule.getBreakLengthInMin().toMinutes());
+								classHour.setEndsAt(LocalDateTime.now().with(lunchTimeEnd));
+								classHour.setClassStatus(ClassStatus.LUNCH_TIME);
+								currentTime = currentTime.plusMinutes(schedule.getLunchLengthInMin().toMinutes());
 							}
-
-						} else {
-							classHour.setBeginsAt(currentTime);
-							classHour.setEndsAt(LocalDateTime.now().with(lunchTimeEnd));
-							classHour.setClassStatus(ClassStatus.LUNCH_TIME);
-							currentTime = currentTime.plusMinutes(schedule.getLunchLengthInMin().toMinutes());
+							classHour.setAcademicProgram(academicProgram);
+							classHourRepo.save(classHour);
 						}
-						classHour.setAcademicProgram(academicProgram);
-						classHourRepo.save(classHour);
+						currentTime = currentTime.plusDays(1).with(schedule.getOpensAt());
 					}
-					currentTime = currentTime.plusDays(1).with(schedule.getOpensAt());
+					currentTime = currentTime.minusDays(1);
 				}
 			} else {
 				throw new ScheduleNotFoundException("schedule not found");
@@ -179,7 +201,8 @@ public class ClassHourServiceImplementation implements IClassHourService {
 			ClassHour classHour = classHourRepo.findById(classH.getClassHourId())
 					.orElseThrow(() -> new ClassHourNotFoundByIdException("ClassHour not found for the given id"));
 
-			if (user.getUserRole().equals(UserRole.TEACHER) && user.getSubject().equals(subject) && user.getAcademicPrograms().contains(classHour.getAcademicProgram())) {
+			if (user.getUserRole().equals(UserRole.TEACHER) && user.getSubject().equals(subject)
+					&& user.getAcademicPrograms().contains(classHour.getAcademicProgram())) {
 
 				if (classHourRepo.existsByBeginsAtAndRoomNo(classHour.getBeginsAt(), classHour.getRoomNo()) == false) {
 
@@ -224,46 +247,38 @@ public class ClassHourServiceImplementation implements IClassHourService {
 		return new ResponseEntity<ResponseStructure<List<ClassHourResponse>>>(listStructure, HttpStatus.FOUND);
 
 	}
-	
+
 	@Override
-    public ResponseEntity<ResponseStructure<String>> duplicateClassHoursForNextWeek(int programId) {
-        AcademicProgram academicProgram = academicProgramRepo.findById(programId)
-                .orElseThrow(() -> new AcademicProgramNotFoundException("Academic program not found"));
+	public ResponseEntity<ResponseStructure<String>> duplicateClassHoursForNextWeek(int programId) {
+		AcademicProgram academicProgram = academicProgramRepo.findById(programId)
+				.orElseThrow(() -> new AcademicProgramNotFoundException("Academic program not found"));
 
-        duplicateClassHoursForNextWeek(academicProgram);
+		duplicateClassHoursForNextWeek(academicProgram);
 
-        structure.setStatus(HttpStatus.CREATED.value());
-        structure.setMessage("Class hours duplicated for the next week successfully");
-        structure.setData("Class hours duplicated for the next week successfully");
+		structure.setStatus(HttpStatus.CREATED.value());
+		structure.setMessage("Class hours duplicated for the next week successfully");
+		structure.setData("Class hours duplicated for the next week successfully");
 
-        return new ResponseEntity<>(structure, HttpStatus.CREATED);
-    }
+		return new ResponseEntity<>(structure, HttpStatus.CREATED);
+	}
 
-    private void duplicateClassHoursForNextWeek(AcademicProgram academicProgram) {
-        List<ClassHour> classHoursForCurrentWeek = classHourRepo.findByAcademicProgramAndBeginsAtAfterAndBeginsAtBefore(
-        		academicProgram,
-                LocalDateTime.now().with(DayOfWeek.MONDAY).truncatedTo(ChronoUnit.DAYS),
-                LocalDateTime.now().with(DayOfWeek.SUNDAY).plusDays(1).truncatedTo(ChronoUnit.DAYS)   
-        );
+	private void duplicateClassHoursForNextWeek(AcademicProgram academicProgram) {
+		List<ClassHour> classHoursForCurrentWeek = classHourRepo.findByAcademicProgramAndBeginsAtAfterAndBeginsAtBefore(
+				academicProgram, LocalDateTime.now().with(DayOfWeek.MONDAY).truncatedTo(ChronoUnit.DAYS),
+				LocalDateTime.now().with(DayOfWeek.SUNDAY).truncatedTo(ChronoUnit.DAYS));
 
-        List<ClassHour> duplicatedClassHoursForNextWeek = new ArrayList<>();
+		List<ClassHour> duplicatedClassHoursForNextWeek = new ArrayList<>();
 
-        for (ClassHour classHour : classHoursForCurrentWeek) {
-            ClassHour duplicatedClassHour = ClassHour.builder()
-                    .academicProgram(academicProgram)
-                    .subject(classHour.getSubject())
-                    .beginsAt(classHour.getBeginsAt().plusWeeks(1))
-                    .endsAt(classHour.getEndsAt().plusWeeks(1))
-                    .roomNo(classHour.getRoomNo())
-                    .classStatus(classHour.getClassStatus())
-                    .user(classHour.getUser())
-                    .build();
+		for (ClassHour classHour : classHoursForCurrentWeek) {
+			ClassHour duplicatedClassHour = ClassHour.builder().academicProgram(academicProgram)
+					.subject(classHour.getSubject()).beginsAt(classHour.getBeginsAt().plusWeeks(1))
+					.endsAt(classHour.getEndsAt().plusWeeks(1)).roomNo(classHour.getRoomNo())
+					.classStatus(classHour.getClassStatus()).user(classHour.getUser()).build();
 
-            duplicatedClassHoursForNextWeek.add(duplicatedClassHour);
-        }
+			duplicatedClassHoursForNextWeek.add(duplicatedClassHour);
+		}
 
-        classHourRepo.saveAll(duplicatedClassHoursForNextWeek);
-    }
-
+		classHourRepo.saveAll(duplicatedClassHoursForNextWeek);
+	}
 
 }

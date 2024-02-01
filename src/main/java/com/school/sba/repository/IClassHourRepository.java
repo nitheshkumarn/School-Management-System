@@ -22,5 +22,8 @@ public interface IClassHourRepository extends JpaRepository<ClassHour, Integer>{
 	List<ClassHour> findByAcademicProgramAndBeginsAtAfterAndBeginsAtBefore(AcademicProgram academicProgram,
 			LocalDateTime plusDays, LocalDateTime plusDays2);
 
+	List<ClassHour> findByAcademicProgramAndBeginsAtAfterAndEndsAtBefore(AcademicProgram academicProgram,
+			LocalDateTime truncatedTo, LocalDateTime truncatedTo2);
+
 }
 
