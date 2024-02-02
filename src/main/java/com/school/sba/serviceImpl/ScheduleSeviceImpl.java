@@ -1,6 +1,7 @@
 package com.school.sba.serviceImpl;
 
 import java.time.Duration;
+import java.time.LocalTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -9,6 +10,10 @@ import org.springframework.stereotype.Service;
 
 import com.school.sba.entity.Schedule;
 import com.school.sba.entity.School;
+import com.school.sba.exception.InvalidScheduleBreakTimeException;
+import com.school.sba.exception.InvalidScheduleClassStartsException;
+import com.school.sba.exception.InvalidScheduleCloseTimeException;
+import com.school.sba.exception.InvalidScheduleLunchTimeException;
 import com.school.sba.exception.ScheduleAlreadyPresentException;
 import com.school.sba.exception.ScheduleNotFoundException;
 import com.school.sba.exception.SchoolNotFoundByIdException;
@@ -58,6 +63,48 @@ public class ScheduleSeviceImpl implements IScheduleService {
 
 		return schoolRepo.findById(schoolId).map(s -> {
 			if (s.getSchedule() == null) {
+				
+				LocalTime opensAt = scheduleRequest.getOpensAt();
+				LocalTime closesAt = scheduleRequest.getClosesAt();
+				long classHourLength = Duration.ofMinutes(scheduleRequest.getClassHoursLengthInMin()).toMinutes();
+				long breakHourLength = Duration.ofMinutes(scheduleRequest.getBreakLengthInMin()).toMinutes();
+				long lunchHourLength = Duration.ofMinutes(scheduleRequest.getLunchLengthInMin()).toMinutes();
+				LocalTime lunchTime = scheduleRequest.getLunchTime();
+				LocalTime breakTime = scheduleRequest.getBreakTime();
+
+				if (closesAt.isBefore(opensAt) || closesAt.isBefore(breakTime) || closesAt.isBefore(lunchTime))
+					throw new InvalidScheduleCloseTimeException("Close Time must be after Open Time");
+
+				LocalTime classStarts = null;
+				for (int i = 0; i < scheduleRequest.getClassHoursPerDay() + 2; i++) {
+					classStarts = opensAt;
+					LocalTime classEnds = classStarts.plusMinutes(classHourLength);
+					
+					if (breakTime.isBefore(classEnds) && breakTime.isAfter(classStarts))
+						throw new InvalidScheduleBreakTimeException("break time should be before Close time");
+					else {
+						if (breakTime.equals(classEnds)) {
+							opensAt = breakTime.plusMinutes(breakHourLength);
+							continue;
+						}
+					}
+
+					if (lunchTime.isBefore(classEnds) && lunchTime.isAfter(classStarts))
+						throw new InvalidScheduleLunchTimeException("lunch time should be before Close time");
+					else {
+						if (lunchTime.equals(classEnds)) {
+							opensAt = lunchTime.plusMinutes(lunchHourLength);
+							continue;
+						}
+					}
+
+					opensAt = classEnds;
+				}
+				
+				if (!classStarts.minusHours(1).equals(closesAt))
+					throw new InvalidScheduleClassStartsException("Closes At is not valid for the classes");
+
+				
 				Schedule saveSchedule = scheduleRepo.save(mapToSchedule(scheduleRequest));
 				s.setSchedule(saveSchedule);
 				schoolRepo.save(s);

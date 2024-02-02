@@ -16,7 +16,7 @@ public interface IClassHourService {
 
 	ResponseEntity<ResponseStructure<List<ClassHourResponse>>> assignPeriods(List<ClassHourRequest> classHourRequest);
 
-	ResponseEntity<ResponseStructure<String>> duplicateClassHoursForNextWeek(int programId);
+	ResponseEntity<ResponseStructure<String>> duplicateClassHoursForThisWeek(int programId);
 
 
 

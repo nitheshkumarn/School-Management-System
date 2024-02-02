@@ -15,6 +15,10 @@ import com.school.sba.exception.AdminNotFoundException;
 import com.school.sba.exception.ClassHourAlreadyExist;
 import com.school.sba.exception.ClassHourNotFoundByIdException;
 import com.school.sba.exception.IllegalArguementException;
+import com.school.sba.exception.InvalidScheduleBreakTimeException;
+import com.school.sba.exception.InvalidScheduleClassStartsException;
+import com.school.sba.exception.InvalidScheduleCloseTimeException;
+import com.school.sba.exception.InvalidScheduleLunchTimeException;
 import com.school.sba.exception.OnlyTeacherCanBeAssignedToSubjectException;
 import com.school.sba.exception.RoomIsOccupiedException;
 import com.school.sba.exception.ScheduleAlreadyPresentException;
@@ -148,5 +152,27 @@ public class ApplicationHandler extends ResponseEntityExceptionHandler {
 		public ResponseEntity<Object> handleRoomOccupied(ClassHourAlreadyExist exception) {
 			return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "Class HOur Already exists");
 		}
+		
+		@ExceptionHandler(InvalidScheduleBreakTimeException.class)
+		public ResponseEntity<Object> handleRoomOccupied(InvalidScheduleBreakTimeException exception) {
+			return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "Invalid Schedule Breaktime");
+		}
+		
+		@ExceptionHandler(InvalidScheduleClassStartsException.class)
+		public ResponseEntity<Object> handleRoomOccupied(InvalidScheduleClassStartsException exception) {
+			return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "Invalid Class Start");
+		}
+		
+		@ExceptionHandler(InvalidScheduleCloseTimeException.class)
+		public ResponseEntity<Object> handleRoomOccupied(InvalidScheduleCloseTimeException exception) {
+			return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "Invalid Close Time");
+		}
+		
+		@ExceptionHandler(InvalidScheduleLunchTimeException.class)
+		public ResponseEntity<Object> handleRoomOccupied(InvalidScheduleLunchTimeException exception) {
+			return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "Invalid Lunch Time");
+		}
+		
+		
 	
 }

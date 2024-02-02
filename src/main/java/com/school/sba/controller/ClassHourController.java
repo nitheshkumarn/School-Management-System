@@ -33,7 +33,7 @@ public class ClassHourController {
     
     @PutMapping("/academic-program/{programId}/class-hours")
     public ResponseEntity<ResponseStructure<String>> duplicateClassHoursForNextWeek(@PathVariable("programId") int programId){	
-    	return classHourService.duplicateClassHoursForNextWeek(programId);
+    	return classHourService.duplicateClassHoursForThisWeek(programId);
     	
     }
 }
