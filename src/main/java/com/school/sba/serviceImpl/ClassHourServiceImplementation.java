@@ -37,6 +37,8 @@ import com.school.sba.responsedto.ClassHourResponse;
 import com.school.sba.service.IClassHourService;
 import com.school.sba.util.ResponseStructure;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class ClassHourServiceImplementation implements IClassHourService {
 
@@ -78,7 +80,10 @@ public class ClassHourServiceImplementation implements IClassHourService {
 		LocalTime breakTimeStart = schedule.getBreakTime();
 		LocalTime breakTimeEnd = breakTimeStart.plusMinutes(schedule.getBreakLengthInMin().toMinutes());
 
-		return (currentTime.toLocalTime().isAfter(breakTimeStart) && currentTime.toLocalTime().isBefore(breakTimeEnd));
+		return ((currentTime.toLocalTime().isAfter(breakTimeStart)
+				|| (currentTime.toLocalTime().equals(breakTimeStart)))
+				&& (currentTime.toLocalTime().isBefore(breakTimeEnd)
+						|| (currentTime.toLocalTime().equals(breakTimeEnd))));
 
 	}
 
@@ -86,7 +91,10 @@ public class ClassHourServiceImplementation implements IClassHourService {
 		LocalTime LunchTimeStart = schedule.getLunchTime();
 		LocalTime LunchTimeEnd = LunchTimeStart.plusMinutes(schedule.getLunchLengthInMin().toMinutes());
 
-		return (currentTime.toLocalTime().isAfter(LunchTimeStart) && currentTime.toLocalTime().isBefore(LunchTimeEnd));
+		return ((currentTime.toLocalTime().isAfter(LunchTimeStart)
+				|| (currentTime.toLocalTime().equals(LunchTimeStart)))
+				&& (currentTime.toLocalTime().isBefore(LunchTimeEnd)
+						|| (currentTime.toLocalTime().equals(LunchTimeEnd))));
 
 	}
 
@@ -99,98 +107,108 @@ public class ClassHourServiceImplementation implements IClassHourService {
 
 			if (schedule != null) {
 
-				LocalDateTime starts = academicProgram.getClassHours().getFirst().getBeginsAt();
-				LocalDateTime ends = academicProgram.getClassHours().getLast().getEndsAt();
+				if (academicProgram.getClassHours() != null) {
+					addClassHour(academicProgram, schedule);
+				}
 
-				if ((LocalDate.now().isAfter(starts.toLocalDate())
-						&& LocalDate.now().isBefore(ends.toLocalDate()) == false)
-						&& (LocalDate.now().isAfter(academicProgram.getProgramBeginsAt())
-								&& LocalDate.now().isBefore(academicProgram.getProgramEndsAt()))) { // checking the
-																									// existence of
-																									// class hour must
-																									// be validated
+				else {
 
-					LocalDate nextSaturday = null;
-					if (LocalDate.now().equals(DayOfWeek.MONDAY) == false) {
-						nextSaturday = LocalDate.now().plusWeeks(1).with(DayOfWeek.SATURDAY);
+					LocalDateTime starts = academicProgram.getClassHours().getFirst().getBeginsAt();
+					LocalDateTime ends = academicProgram.getClassHours().getLast().getEndsAt();
 
+					if ((LocalDate.now().isAfter(starts.toLocalDate()) || (LocalDate.now().equals(starts.toLocalDate()))
+							&& (LocalDate.now().isBefore(ends.toLocalDate())
+									|| (LocalDate.now().equals(ends.toLocalDate())) == false))
+							&& (LocalDate.now().minusDays(1).isAfter(academicProgram.getProgramBeginsAt())
+									&& LocalDate.now().isBefore(academicProgram.getProgramEndsAt()))) {
+
+						addClassHour(academicProgram, schedule);// checking the
 					} else
-						nextSaturday = LocalDate.now().with(DayOfWeek.SATURDAY);
-
-					int classHoursPerDay = schedule.getClassHoursPerDay();
-					int classHourLengthInMinutes = (int) schedule.getClassHoursLengthInMin().toMinutes();
-					LocalDate currentDate = LocalDate.now();
-
-					LocalDateTime currentTime = LocalDateTime.now().with(schedule.getOpensAt());
-					System.out.println(currentTime);
-
-					LocalTime breakTimeStart = schedule.getBreakTime();
-					System.out.println(breakTimeStart);
-					LocalTime breakTimeEnd = breakTimeStart.plusMinutes(schedule.getBreakLengthInMin().toMinutes());
-					System.out.println(breakTimeEnd);
-
-					LocalTime lunchTimeStart = schedule.getLunchTime();
-					System.out.println(lunchTimeStart);
-
-					LocalTime lunchTimeEnd = lunchTimeStart.plusMinutes(schedule.getLunchLengthInMin().toMinutes());
-					System.out.println(lunchTimeEnd);
-
-					while (currentDate.isBefore(nextSaturday)) {
-						if (currentDate.getDayOfWeek() != DayOfWeek.SUNDAY) {
-
-							for (int hour = 0; hour < classHoursPerDay + 2; hour++) {
-
-								ClassHour classHour = new ClassHour();
-
-								if (!currentTime.toLocalTime().equals(lunchTimeStart)
-										&& !isLunchTime(currentTime, schedule)) {
-
-									if (!currentTime.toLocalTime().equals(breakTimeStart)
-											&& !isBreakTime(currentTime, schedule)) {
-										LocalDateTime beginsAt = currentTime;
-										LocalDateTime endsAt = beginsAt.plusMinutes(classHourLengthInMinutes);
-										System.out.println("inside if start time " + beginsAt);
-										System.out.println("inside if ends time " + endsAt);
-
-										classHour.setBeginsAt(beginsAt);
-										classHour.setEndsAt(endsAt);
-										classHour.setClassStatus(ClassStatus.NOT_SCHEDULED);
-
-										currentTime = endsAt;
-									} else {
-										System.out.println("inside else");
-										classHour.setBeginsAt(currentTime);
-										classHour.setEndsAt(LocalDateTime.now().with(breakTimeEnd));
-
-										classHour.setClassStatus(ClassStatus.BREAK_TIME);
-										currentTime = currentTime
-												.plusMinutes(schedule.getBreakLengthInMin().toMinutes());
-									}
-
-								} else {
-									classHour.setBeginsAt(currentTime);
-									classHour.setEndsAt(LocalDateTime.now().with(lunchTimeEnd));
-									classHour.setClassStatus(ClassStatus.LUNCH_TIME);
-									currentTime = currentTime.plusMinutes(schedule.getLunchLengthInMin().toMinutes());
-								}
-								classHour.setAcademicProgram(academicProgram);
-								classHourRepo.save(classHour);
-							}
-							currentTime = currentTime.plusDays(1).with(schedule.getOpensAt());
-						}
-						currentTime = currentTime.plusDays(1);
-					}
-				} else
-					throw new ScheduleAlreadyPresentException("Schedule Already Presnt for this week");
-			} else {
+						throw new RuntimeException();
+				}
+//																								
+			} else
 				throw new ScheduleNotFoundException("schedule not found");
-			}
+
 			structure.setStatus(HttpStatus.CREATED.value());
 			structure.setMessage("ClassHour generated successfully for the academic progarm");
 			structure.setData("Class Hour generated for the current week successfully");
 
 			return new ResponseEntity<ResponseStructure<String>>(structure, HttpStatus.CREATED);
 		}).orElseThrow(() -> new AcademicProgramNotFoundException("academic program not found"));
+	}
+
+	private void addClassHour(AcademicProgram academicProgram, Schedule schedule) {
+
+		
+
+		LocalDate nextSaturday = null;
+		if (LocalDate.now().equals(DayOfWeek.MONDAY) == false) {
+			nextSaturday = LocalDate.now().plusWeeks(1).with(DayOfWeek.SUNDAY);
+
+		} else
+			nextSaturday = LocalDate.now().with(DayOfWeek.SUNDAY);
+
+		int classHoursPerDay = schedule.getClassHoursPerDay();
+		int classHourLengthInMinutes = (int) schedule.getClassHoursLengthInMin().toMinutes();
+		LocalDate currentDate = LocalDate.now();
+
+		LocalDateTime currentTime = LocalDateTime.now().with(schedule.getOpensAt());
+		System.out.println(currentTime);
+
+		LocalTime breakTimeStart = schedule.getBreakTime();
+		System.out.println(breakTimeStart);
+		LocalTime breakTimeEnd = breakTimeStart.plusMinutes(schedule.getBreakLengthInMin().toMinutes());
+		System.out.println(breakTimeEnd);
+
+		LocalTime lunchTimeStart = schedule.getLunchTime();
+		System.out.println(lunchTimeStart);
+
+		LocalTime lunchTimeEnd = lunchTimeStart.plusMinutes(schedule.getLunchLengthInMin().toMinutes());
+		System.out.println(lunchTimeEnd);
+
+		while (currentDate.isBefore(nextSaturday)) {
+			if (currentDate.getDayOfWeek() != DayOfWeek.SUNDAY) {
+
+				for (int hour = 0; hour < classHoursPerDay + 2; hour++) {
+
+					ClassHour classHour = new ClassHour();
+
+					if (!currentTime.toLocalTime().equals(lunchTimeStart) && !isLunchTime(currentTime, schedule)) {
+
+						if (!currentTime.toLocalTime().equals(breakTimeStart) && !isBreakTime(currentTime, schedule)) {
+							LocalDateTime beginsAt = currentTime;
+							LocalDateTime endsAt = beginsAt.plusMinutes(classHourLengthInMinutes);
+							System.out.println("inside if start time " + beginsAt);
+							System.out.println("inside if ends time " + endsAt);
+
+							classHour.setBeginsAt(beginsAt);
+							classHour.setEndsAt(endsAt);
+							classHour.setClassStatus(ClassStatus.NOT_SCHEDULED);
+
+							currentTime = endsAt;
+						} else {
+							System.out.println("inside else");
+							classHour.setBeginsAt(currentTime);
+							classHour.setEndsAt(LocalDateTime.now().with(breakTimeEnd));
+
+							classHour.setClassStatus(ClassStatus.BREAK_TIME);
+							currentTime = currentTime.plusMinutes(schedule.getBreakLengthInMin().toMinutes());
+						}
+
+					} else {
+						classHour.setBeginsAt(currentTime);
+						classHour.setEndsAt(LocalDateTime.now().with(lunchTimeEnd));
+						classHour.setClassStatus(ClassStatus.LUNCH_TIME);
+						currentTime = currentTime.plusMinutes(schedule.getLunchLengthInMin().toMinutes());
+					}
+					classHour.setAcademicProgram(academicProgram);
+					classHourRepo.save(classHour);
+				}
+				currentTime = currentTime.plusDays(1).with(schedule.getOpensAt());
+			}
+			currentDate = currentDate.plusDays(1);
+		}
 	}
 
 	@Override
@@ -255,6 +273,7 @@ public class ClassHourServiceImplementation implements IClassHourService {
 	}
 
 	@Override
+	@Transactional
 	public ResponseEntity<ResponseStructure<String>> duplicateClassHoursForNextWeek(int programId) {
 		AcademicProgram academicProgram = academicProgramRepo.findById(programId)
 				.orElseThrow(() -> new AcademicProgramNotFoundException("Academic program not found"));

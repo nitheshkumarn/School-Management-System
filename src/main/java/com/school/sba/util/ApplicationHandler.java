@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import com.school.sba.exception.AcademicProgramNotFoundException;
 import com.school.sba.exception.AdminAlreadyExistException;
 import com.school.sba.exception.AdminCannotBeAssignedToAcademicProgram;
 import com.school.sba.exception.AdminNotFoundException;
@@ -134,6 +135,11 @@ public class ApplicationHandler extends ResponseEntityExceptionHandler {
 		
 		@ExceptionHandler(IllegalArguementException.class)
 		public ResponseEntity<Object> handleRoomOccupied(IllegalArguementException exception) {
+			return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "Illegal arguement for the field");
+		}
+		
+		@ExceptionHandler(AcademicProgramNotFoundException.class)
+		public ResponseEntity<Object> handleRoomOccupied(AcademicProgramNotFoundException exception) {
 			return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "Illegal arguement for the field");
 		}
 	
