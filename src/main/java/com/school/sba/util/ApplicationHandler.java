@@ -12,6 +12,7 @@ import com.school.sba.exception.AcademicProgramNotFoundException;
 import com.school.sba.exception.AdminAlreadyExistException;
 import com.school.sba.exception.AdminCannotBeAssignedToAcademicProgram;
 import com.school.sba.exception.AdminNotFoundException;
+import com.school.sba.exception.ClassHourAlreadyExist;
 import com.school.sba.exception.ClassHourNotFoundByIdException;
 import com.school.sba.exception.IllegalArguementException;
 import com.school.sba.exception.OnlyTeacherCanBeAssignedToSubjectException;
@@ -141,6 +142,11 @@ public class ApplicationHandler extends ResponseEntityExceptionHandler {
 		@ExceptionHandler(AcademicProgramNotFoundException.class)
 		public ResponseEntity<Object> handleRoomOccupied(AcademicProgramNotFoundException exception) {
 			return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "Illegal arguement for the field");
+		}
+		
+		@ExceptionHandler(ClassHourAlreadyExist.class)
+		public ResponseEntity<Object> handleRoomOccupied(ClassHourAlreadyExist exception) {
+			return structure(HttpStatus.BAD_REQUEST, exception.getMessage(), "Class HOur Already exists");
 		}
 	
 }

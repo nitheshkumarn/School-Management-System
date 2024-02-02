@@ -21,6 +21,7 @@ import com.school.sba.entity.User;
 import com.school.sba.entity.enums.ClassStatus;
 import com.school.sba.entity.enums.UserRole;
 import com.school.sba.exception.AcademicProgramNotFoundException;
+import com.school.sba.exception.ClassHourAlreadyExist;
 import com.school.sba.exception.ClassHourNotFoundByIdException;
 import com.school.sba.exception.RoomIsOccupiedException;
 import com.school.sba.exception.ScheduleAlreadyPresentException;
@@ -107,8 +108,14 @@ public class ClassHourServiceImplementation implements IClassHourService {
 
 			if (schedule != null) {
 
-				if (academicProgram.getClassHours() != null) {
-					addClassHour(academicProgram, schedule);
+				if (academicProgram.getClassHours() == null) {
+					LocalDate nextSaturday = null;
+					if (LocalDate.now().equals(DayOfWeek.MONDAY) == false) {
+						nextSaturday = LocalDate.now().plusWeeks(1).with(DayOfWeek.SATURDAY);
+
+					} else
+						nextSaturday = LocalDate.now().with(DayOfWeek.SATURDAY);
+					addClassHour(academicProgram, schedule, nextSaturday);
 				}
 
 				else {
@@ -116,15 +123,17 @@ public class ClassHourServiceImplementation implements IClassHourService {
 					LocalDateTime starts = academicProgram.getClassHours().getFirst().getBeginsAt();
 					LocalDateTime ends = academicProgram.getClassHours().getLast().getEndsAt();
 
-					if ((LocalDate.now().isAfter(starts.toLocalDate()) || (LocalDate.now().equals(starts.toLocalDate()))
-							&& (LocalDate.now().isBefore(ends.toLocalDate())
-									|| (LocalDate.now().equals(ends.toLocalDate())) == false))
+					if (((LocalDate.now().isAfter(starts.toLocalDate()) || (LocalDate.now().equals(starts.toLocalDate())))
+							&& ((LocalDate.now().isBefore(ends.toLocalDate())
+									|| (LocalDate.now().equals(ends.toLocalDate())))) == false)
 							&& (LocalDate.now().minusDays(1).isAfter(academicProgram.getProgramBeginsAt())
 									&& LocalDate.now().isBefore(academicProgram.getProgramEndsAt()))) {
 
-						addClassHour(academicProgram, schedule);// checking the
+						LocalDate nextSaturday = LocalDate.now().with(DayOfWeek.SATURDAY);
+
+						addClassHour(academicProgram, schedule, nextSaturday);// checking the
 					} else
-						throw new RuntimeException();
+						throw new ClassHourAlreadyExist("Class Hour Already Exists for this week");
 				}
 //																								
 			} else
@@ -138,17 +147,7 @@ public class ClassHourServiceImplementation implements IClassHourService {
 		}).orElseThrow(() -> new AcademicProgramNotFoundException("academic program not found"));
 	}
 
-	private void addClassHour(AcademicProgram academicProgram, Schedule schedule) {
-
-		
-
-		LocalDate nextSaturday = null;
-		if (LocalDate.now().equals(DayOfWeek.MONDAY) == false) {
-			nextSaturday = LocalDate.now().plusWeeks(1).with(DayOfWeek.SUNDAY);
-
-		} else
-			nextSaturday = LocalDate.now().with(DayOfWeek.SUNDAY);
-
+	private void addClassHour(AcademicProgram academicProgram, Schedule schedule, LocalDate nextSaturday) {
 		int classHoursPerDay = schedule.getClassHoursPerDay();
 		int classHourLengthInMinutes = (int) schedule.getClassHoursLengthInMin().toMinutes();
 		LocalDate currentDate = LocalDate.now();
@@ -167,7 +166,7 @@ public class ClassHourServiceImplementation implements IClassHourService {
 		LocalTime lunchTimeEnd = lunchTimeStart.plusMinutes(schedule.getLunchLengthInMin().toMinutes());
 		System.out.println(lunchTimeEnd);
 
-		while (currentDate.isBefore(nextSaturday)) {
+		while (currentDate.isBefore(nextSaturday.plusDays(1))) {
 			if (currentDate.getDayOfWeek() != DayOfWeek.SUNDAY) {
 
 				for (int hour = 0; hour < classHoursPerDay + 2; hour++) {
