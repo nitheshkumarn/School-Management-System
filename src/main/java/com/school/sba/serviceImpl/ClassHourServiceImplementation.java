@@ -1,17 +1,29 @@
 package com.school.sba.serviceImpl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.school.sba.entity.AcademicProgram;
 import com.school.sba.entity.ClassHour;
@@ -24,7 +36,6 @@ import com.school.sba.exception.AcademicProgramNotFoundException;
 import com.school.sba.exception.ClassHourAlreadyExist;
 import com.school.sba.exception.ClassHourNotFoundByIdException;
 import com.school.sba.exception.RoomIsOccupiedException;
-import com.school.sba.exception.ScheduleAlreadyPresentException;
 import com.school.sba.exception.ScheduleNotFoundException;
 import com.school.sba.exception.SubjectNotAssignedToClassHourException;
 import com.school.sba.exception.SubjectNotFoundException;
@@ -34,6 +45,7 @@ import com.school.sba.repository.IClassHourRepository;
 import com.school.sba.repository.ISubjectRepository;
 import com.school.sba.repository.UserRepository;
 import com.school.sba.requestdto.ClassHourRequest;
+import com.school.sba.requestdto.ExcelRequest;
 import com.school.sba.responsedto.ClassHourResponse;
 import com.school.sba.service.IClassHourService;
 import com.school.sba.util.ResponseStructure;
@@ -290,8 +302,6 @@ public class ClassHourServiceImplementation implements IClassHourService {
 
 	public void duplicateClassHoursForThisWeek(AcademicProgram academicProgram) {
 		List<ClassHour> classHoursOfPreviousWeek = classHourRepo.findByAcademicProgramAndBeginsAtAfterAndBeginsAtBefore(
-				
-				
 				academicProgram, LocalDateTime.now().with(DayOfWeek.MONDAY).truncatedTo(ChronoUnit.DAYS).minusWeeks(1),
 				LocalDateTime.now().with(DayOfWeek.SUNDAY).truncatedTo(ChronoUnit.DAYS).minusWeeks(1));
 
@@ -307,6 +317,144 @@ public class ClassHourServiceImplementation implements IClassHourService {
 		}
 
 		classHourRepo.saveAll(duplicatedClassHoursForThisWeek);
+	}
+
+	@Override
+	public String toWorkBook(int programId, ExcelRequest excelRequest) {
+
+		LocalDateTime fromDateTime = excelRequest.getFromDate().atTime(LocalTime.MIDNIGHT);
+		LocalDateTime toDateTime = excelRequest.getToDate().atTime(LocalTime.MIDNIGHT).plusDays(1);
+		AcademicProgram academicProgram = academicProgramRepo.findById(programId)
+				.orElseThrow(() -> new AcademicProgramNotFoundException("Academic Program Not Found"));
+
+		List<ClassHour> classHours = classHourRepo.findAllByAcademicProgramAndBeginsAtBetween(academicProgram,
+				fromDateTime, toDateTime);
+
+		XSSFWorkbook workBook = new XSSFWorkbook();
+		Sheet sheet = workBook.createSheet();
+
+		int rowNum = 0;
+
+		Row header = sheet.createRow(rowNum);
+		header.createCell(0).setCellValue("Date");
+		header.createCell(1).setCellValue("Begin Time");
+		header.createCell(2).setCellValue("End Time");
+		header.createCell(3).setCellValue("Room No");
+		header.createCell(4).setCellValue("Subject");
+		header.createCell(5).setCellValue("Teacher");
+
+		DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+		DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+		for (ClassHour classHour : classHours) {
+
+			Row row = sheet.createRow(++rowNum);
+			row.createCell(0).setCellValue(dateFormatter.format(classHour.getBeginsAt()));
+			row.createCell(1).setCellValue(timeFormatter.format(classHour.getBeginsAt()));
+			row.createCell(2).setCellValue(timeFormatter.format(classHour.getEndsAt()));
+			if (classHour.getRoomNo() == 0)
+				row.createCell(3).setCellValue("");
+			else
+				row.createCell(3).setCellValue(classHour.getRoomNo());
+			if (classHour.getSubject() == null)
+				row.createCell(4).setCellValue("");
+			else
+				row.createCell(4).setCellValue(classHour.getSubject().getSubjectName());
+			if (classHour.getUser() == null)
+				row.createCell(5).setCellValue("");
+			else
+				row.createCell(5).setCellValue(classHour.getUser().getUserName());
+		}
+		
+
+		try {
+			workBook.write(new FileOutputStream(excelRequest.getFilePath() +"\\test.xlsx"));
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return "success";
+	}
+
+
+	@Override
+	public ResponseEntity<?> generateExcel(int programId, LocalDate from, LocalDate to, MultipartFile file) {
+		
+		LocalDateTime fromDateTime = from.atTime(LocalTime.MIDNIGHT);
+		LocalDateTime toDateTime = to.atTime(LocalTime.MIDNIGHT).plusDays(1);
+		AcademicProgram academicProgram = academicProgramRepo.findById(programId)
+				.orElseThrow(() -> new AcademicProgramNotFoundException("Academic Program Not Found"));
+
+		List<ClassHour> classHours = classHourRepo.findAllByAcademicProgramAndBeginsAtBetween(academicProgram,
+				fromDateTime, toDateTime);
+
+		XSSFWorkbook workBook = null;
+		try {
+			workBook = new XSSFWorkbook(file.getInputStream());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		Sheet sheet = workBook.createSheet();
+
+		int rowNum = 0;
+		
+		Row header = sheet.createRow(rowNum);
+		header.createCell(0).setCellValue("Date");
+		header.createCell(1).setCellValue("Begin Time");
+		header.createCell(2).setCellValue("End Time");
+		header.createCell(3).setCellValue("Room No");
+		header.createCell(4).setCellValue("Subject");
+		header.createCell(5).setCellValue("Teacher");
+		
+		DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+		DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+		for (ClassHour classHour : classHours) {
+
+			Row row = sheet.createRow(++rowNum);
+			row.createCell(0).setCellValue(dateFormatter.format(classHour.getBeginsAt()));
+			row.createCell(1).setCellValue(timeFormatter.format(classHour.getBeginsAt()));
+			row.createCell(2).setCellValue(timeFormatter.format(classHour.getEndsAt()));
+			if (classHour.getRoomNo() == 0)
+				row.createCell(3).setCellValue("");
+			else
+				row.createCell(3).setCellValue(classHour.getRoomNo());
+			if (classHour.getSubject() == null)
+				row.createCell(4).setCellValue("");
+			else
+				row.createCell(4).setCellValue(classHour.getSubject().getSubjectName());
+			if (classHour.getUser() == null)
+				row.createCell(5).setCellValue("");
+			else
+				row.createCell(5).setCellValue(classHour.getUser().getUserName());
+		}
+		
+		byte[] workbookBytes = null;
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            try {
+				workBook.write(bos);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+            workBook.close();
+            workbookBytes = bos.toByteArray();
+        } catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", file.getOriginalFilename());
+		
+		
+        return new ResponseEntity<>(workbookBytes, headers,  HttpStatus.OK);
 	}
 
 }
