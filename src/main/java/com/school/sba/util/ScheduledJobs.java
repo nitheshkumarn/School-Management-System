@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 import com.school.sba.entity.AcademicProgram;
 import com.school.sba.entity.User;
 import com.school.sba.repository.AcademicProgramRepository;
-import com.school.sba.repository.IClassHourRepository;
 import com.school.sba.repository.UserRepository;
 import com.school.sba.serviceImpl.AcademicProgramServiceImpl;
 import com.school.sba.serviceImpl.ClassHourServiceImplementation;
@@ -38,7 +37,7 @@ public class ScheduledJobs {
 	
 	
 	
-	@Scheduled(fixedDelay = 1000l)
+	//@Scheduled(fixedDelay = 1000l)
 	void deleteUser() {
 		
 		List<User> users =userRepo.findByIsDeletedIsTrue();
@@ -49,7 +48,7 @@ public class ScheduledJobs {
 		}
 	}
 		
-		@Scheduled(fixedDelay = 1000l)
+		//@Scheduled(fixedDelay = 1000l)
 		void deleteAcademicProgram() {
 			
 			List<AcademicProgram> programs =academicProgramRepo.findByIsDeletedIsTrue();
@@ -60,15 +59,14 @@ public class ScheduledJobs {
 			}
 	}
 		
-		@Scheduled(cron = "0 0 0 ? * MON")
+		@Scheduled(cron = "0 0 0 * * MON")
 		void classHourWeekly() {
 			
 			AcademicProgram ap = academicProgramRepo.findById(1).orElseThrow();
 			
 			if(ap.isAutoRepeat()) {
-				
-				
-				chi.duplicateClassHoursForNextWeek(ap);
+					
+				chi.duplicateClassHoursForThisWeek(ap);
 				
 			}
 			
